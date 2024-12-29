@@ -19,8 +19,8 @@
 
 void Game::Init()
 {
-	ResourceManager::LoadRawModel("block_symmetrical", RawModel(BlockData::vertices, BlockData::texture_coords_symmetrical, BlockData::indices));
-	ResourceManager::LoadRawModel("block_3_part", RawModel(BlockData::vertices, BlockData::texture_coords_3_part, BlockData::indices));
+	BlockLoader block_loader;
+	block_loader.LoadBlocks();
 
 
 	//for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
@@ -28,14 +28,6 @@ void Game::Init()
 	//	std::string type = BlockTypeString[i];
 	//	ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "textures/" + type + ".png", true));
 	//}
-
-	std::vector<std::string> grass_block = {
-		RESOURCES_PATH "assets/blocks/grass_block_top.png",
-		RESOURCES_PATH "assets/blocks/grass_block_side.png",
-		RESOURCES_PATH "assets/blocks/dirt.png"
-	};
-	ResourceManager::LoadTexture("grass_block", Texture(grass_block, true));
-	ResourceManager::LoadTexture("stone", Texture(RESOURCES_PATH "assets/blocks/stone.png"));
 
 	ResourceManager::LoadShader("entity", Shader(RESOURCES_PATH "shaders/entity.shader"));
 	ResourceManager::LoadShader("entity_tinted", Shader(RESOURCES_PATH "shaders/entity_tinted.shader"));
@@ -75,22 +67,19 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	Blocks.push_back(
-		Block("grass_block", glm::vec3(-1, -1, -2), false)
-	);
-	Blocks.push_back(
-		Block("stone", glm::vec3(-2, -2, -2), true)
-	);
+	//Blocks.push_back(
+	//	Block(BlockType::GRASS_BLOCK, glm::vec3(-1, -1, -2), false)
+	//);
+	//Blocks.push_back(
+	//	Block(BlockType::STONE, glm::vec3(-2, -2, -2), true)
+	//);
 
-	/*for (unsigned int i = 0; i < 100; i++)
+	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
-		Blocks.push_back(
-			Block(
-				BlockType::GRASS,
-				glm::vec3(i, 0, i)
-			)
-		);
-	}*/
+		Block b = ResourceManager::GetBlock((BlockType)i);
+		b.position = glm::vec3(i, 0, i);
+		Blocks.push_back(b);
+	}
 }
 
 

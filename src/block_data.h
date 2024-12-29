@@ -1,5 +1,47 @@
 #pragma once
 
+#include <array>
+#include <vector>
+
+enum BlockType {
+	// Environmental
+	GRASS_BLOCK,
+	DIRT,
+	SAND,
+	STONE,
+
+	// Ore
+	COAL_ORE,
+	COPPER_ORE,
+	IRON_ORE,
+	GOLD_ORE,
+
+	// Growth
+	OAK_LOG,
+	OAK_LEAVES,
+
+	// Represents the amount of block types
+	BLOCK_COUNT
+};
+
+constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
+	// Environmental
+	"GRASS_BLOCK",
+	"DIRT",
+	"SAND",
+	"STONE",
+
+	// Ore
+	"COAL_ORE",
+	"COPPER_ORE",
+	"IRON_ORE",
+	"GOLD_ORE",
+
+	// Growth
+	"OAK_LOG",
+	"OAK_LEAVES",
+};
+
 namespace BlockData
 {
 	const std::vector<float> vertices = {
@@ -139,3 +181,11 @@ namespace BlockData
 		23,21,22
 	};
 }
+
+class BlockLoader
+{
+public:
+	BlockLoader() {};
+
+	void LoadBlocks();
+};

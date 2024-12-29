@@ -1,17 +1,17 @@
 #pragma once
 
-#include "string"
-
 #include <glm/glm.hpp>
 
 #include "entity.h"
 #include "shader_s.h"
-
+#include "block_data.h"
 
 class Block : public Entity
 {
 public:
-	std::string type;
+	BlockType type;
+	bool symmetrical;
 
-	Block(std::string type, glm::vec3 position, bool symmetrical = true);
+	Block(BlockType type, glm::vec3 position, bool symmetrical);
+	Block(const Block& orig);
 };
