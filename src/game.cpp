@@ -21,7 +21,8 @@ int BRICK_HEIGHT = 25;
 
 void Game::Init()
 {
-	ResourceManager::LoadRawModel("block", RawModel(BlockData::vertices, BlockData::textureCoords, BlockData::indices));
+	ResourceManager::LoadRawModel("block", RawModel(BlockData::vertices, BlockData::texture_coords, BlockData::indices));
+	/*ResourceManager::LoadRawModel("quad_top", RawModel(BlockData::vertices_top, BlockData::texture_coords_top, BlockData::indices_top));*/
 
 	/*ResourceManager::LoadTexture("background", Texture(RESOURCES_PATH "background.jpg", false));
 	ResourceManager::LoadTexture("paddle", Texture(RESOURCES_PATH "paddle.png", true));
@@ -34,11 +35,13 @@ void Game::Init()
 	ResourceManager::LoadTexture("laser", Texture(RESOURCES_PATH "laser.png", true));*/
 
 
-	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
-	{
-		std::string type = BlockTypeString[i];
-		ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "textures/" + type + ".png", true));
-	}
+	//for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
+	//{
+	//	std::string type = BlockTypeString[i];
+	//	ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "textures/" + type + ".png", true));
+	//}
+
+	ResourceManager::LoadTexture("grass_block", Texture(RESOURCES_PATH "assets/blocks/grass_block.png", true));
 
 	ResourceManager::LoadShader("entity", Shader(RESOURCES_PATH "shaders/entity.shader"));
 	ResourceManager::LoadShader("entity_tinted", Shader(RESOURCES_PATH "shaders/entity_tinted.shader"));
@@ -78,7 +81,11 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	for (unsigned int i = 0; i < 100; i++)
+	Blocks.push_back(
+		Block("grass_block", glm::vec3(-1, -1, -2))
+	);
+
+	/*for (unsigned int i = 0; i < 100; i++)
 	{
 		Blocks.push_back(
 			Block(
@@ -86,7 +93,7 @@ void Game::LoadLevel()
 				glm::vec3(i, 0, i)
 			)
 		);
-	}
+	}*/
 }
 
 
@@ -143,8 +150,6 @@ void Game::ProcessInput(float dt)
 void Game::Update(float dt)
 {
 	fps = fps_counter.Update();
-	//fps = fps_counter / .;
-	//fps = 1.0f / dt;
 	//CheckCollisions();
 	//particle_manager->Update(dt);
 
