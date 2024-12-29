@@ -13,5 +13,5 @@ class Block : public Entity
 public:
 	std::string type;
 
-	Block(std::string type, glm::vec3 position);
+	Block(std::string type, glm::vec3 position, bool symmetrical = true);
 };

@@ -26,6 +26,9 @@ extern "C"
 
 int main(void)
 {
+
+	//return;
+
 	if (!glfwInit())
 		return -1;
 

@@ -27,8 +27,8 @@ private:
 	Camera* camera;
 	Game* game;
 
-	float lastX = 400;
-	float lastY = 300;
+	double lastX = 0;
+	double lastY = 0;
 	bool firstMouse = true;
 	int joystick_id = -1;
 

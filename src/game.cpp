@@ -16,23 +16,11 @@
 #include "resource_manager.h"
 #include "text_renderer.h"
 
-int BRICK_WIDTH = 50;
-int BRICK_HEIGHT = 25;
 
 void Game::Init()
 {
-	ResourceManager::LoadRawModel("block", RawModel(BlockData::vertices, BlockData::texture_coords, BlockData::indices));
-	/*ResourceManager::LoadRawModel("quad_top", RawModel(BlockData::vertices_top, BlockData::texture_coords_top, BlockData::indices_top));*/
-
-	/*ResourceManager::LoadTexture("background", Texture(RESOURCES_PATH "background.jpg", false));
-	ResourceManager::LoadTexture("paddle", Texture(RESOURCES_PATH "paddle.png", true));
-	ResourceManager::LoadTexture("ball", Texture(RESOURCES_PATH "ball.png", true));
-	ResourceManager::LoadTexture("wood", Texture(RESOURCES_PATH "container.jpg", false));
-	ResourceManager::LoadTexture("brick", Texture(RESOURCES_PATH "brick.png", true));
-	ResourceManager::LoadTexture("metal", Texture(RESOURCES_PATH "metal.png", true));
-	ResourceManager::LoadTexture("particle", Texture(RESOURCES_PATH "particle.png", true));
-	ResourceManager::LoadTexture("laser_gun", Texture(RESOURCES_PATH "laser_gun.png", true));
-	ResourceManager::LoadTexture("laser", Texture(RESOURCES_PATH "laser.png", true));*/
+	ResourceManager::LoadRawModel("block_symmetrical", RawModel(BlockData::vertices, BlockData::texture_coords_symmetrical, BlockData::indices));
+	ResourceManager::LoadRawModel("block_3_part", RawModel(BlockData::vertices, BlockData::texture_coords_3_part, BlockData::indices));
 
 
 	//for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
@@ -41,7 +29,13 @@ void Game::Init()
 	//	ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "textures/" + type + ".png", true));
 	//}
 
-	ResourceManager::LoadTexture("grass_block", Texture(RESOURCES_PATH "assets/blocks/grass_block.png", true));
+	std::vector<std::string> grass_block = {
+		RESOURCES_PATH "assets/blocks/grass_block_top.png",
+		RESOURCES_PATH "assets/blocks/grass_block_side.png",
+		RESOURCES_PATH "assets/blocks/dirt.png"
+	};
+	ResourceManager::LoadTexture("grass_block", Texture(grass_block, true));
+	ResourceManager::LoadTexture("stone", Texture(RESOURCES_PATH "assets/blocks/stone.png"));
 
 	ResourceManager::LoadShader("entity", Shader(RESOURCES_PATH "shaders/entity.shader"));
 	ResourceManager::LoadShader("entity_tinted", Shader(RESOURCES_PATH "shaders/entity_tinted.shader"));
@@ -82,7 +76,10 @@ void Game::LoadLevel()
 	Blocks.clear();
 
 	Blocks.push_back(
-		Block("grass_block", glm::vec3(-1, -1, -2))
+		Block("grass_block", glm::vec3(-1, -1, -2), false)
+	);
+	Blocks.push_back(
+		Block("stone", glm::vec3(-2, -2, -2), true)
 	);
 
 	/*for (unsigned int i = 0; i < 100; i++)

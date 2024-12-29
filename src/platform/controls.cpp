@@ -49,8 +49,8 @@ void Controls::mouse_callback(GLFWwindow* window, double xpos, double ypos)
 		controls->firstMouse = false;
 	}
 
-	float xoffset = xpos - controls->lastX;
-	float yoffset = controls->lastY - ypos;
+	double xoffset = xpos - controls->lastX;
+	double yoffset = controls->lastY - ypos;
 	controls->lastX = xpos;
 	controls->lastY = ypos;
 
