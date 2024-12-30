@@ -11,18 +11,17 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <raudio.h>
-#include "perlin_noise.hpp"
 
-#include "block_data.h"
+#include "blocks/block_data.h"
 #include "resource_manager.h"
 #include "text_renderer.h"
+#include "map_generation/map_generator.h"
 
 
 void Game::Init()
 {
 	BlockLoader block_loader;
 	block_loader.LoadBlocks();
-
 
 	//for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	//{
@@ -48,6 +47,8 @@ void Game::Init()
 	camera = new Camera();
 	renderer->init(camera);
 
+	map_generator = new MapGenerator(renderer);
+
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),
 	//	&ResourceManager::GetTexture("particle"),
@@ -66,22 +67,9 @@ void Game::ResetGame()
 
 void Game::LoadLevel()
 {
-	const siv::PerlinNoise::seed_type seed = 123456u;
-	const siv::PerlinNoise perlin{ seed };
-
-	for (int y = 0; y < 5; ++y)
-	{
-		for (int x = 0; x < 5; ++x)
-		{
-			const double noise = perlin.octave2D_01((x * 0.01), (y * 0.01), 4);
-
-			std::cout << noise << '\t';
-		}
-
-		std::cout << '\n';
-	}
-
 	Blocks.clear();
+
+	map_generator->GenerateMap(128, 10.0, 8, 123456);
 
 	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
@@ -95,6 +83,14 @@ void Game::LoadLevel()
 
 void Game::ProcessInput(float dt)
 {
+	if (State == DEBUG) {
+		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
+			std::cout << "Pressed" << std::endl;
+			map_generator->GenerateMap(128, random_float(0.1, 64.0), random_int(1, 16), 123456);
+			keyboard_keys_processed[GLFW_KEY_G] = true;
+		}
+	}
+
 	if (State == GAME_MENU) {
 		if (keyboard_keys[GLFW_KEY_ENTER] && !keyboard_keys_processed[GLFW_KEY_ENTER]) {
 			State = GAME_ACTIVE;
@@ -172,6 +168,8 @@ void Game::Render()
 		text_renderer->RenderText("Press Enter or Start to start", glm::vec2(140.0f, LevelHeight / 2.0f), 0.4f);
 		text_renderer->RenderText("Press W or S to select level", glm::vec2(210.0f, (LevelHeight / 2.0f) + 30.0f), 0.3f);
 	}
+
+	map_generator->DrawNoisemap();
 }
 
 Direction VectorDirection(glm::vec2 target)
@@ -212,4 +210,5 @@ Game::~Game()
 	//delete player;
 	delete camera;
 	delete text_renderer;
+	delete map_generator;
 }

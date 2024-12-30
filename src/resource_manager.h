@@ -7,8 +7,8 @@
 #include "shader_s.h"
 #include "raw_model.h"
 #include "texture.h"
-#include "block.h"
-#include "block_data.h"
+#include "blocks/block.h"
+#include "blocks/block_data.h"
 
 class ResourceManager
 {

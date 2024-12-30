@@ -98,6 +98,22 @@ Texture::Texture(std::vector<std::string> texturePaths, bool stack_horizontal)
 	stbi_image_free(data_bottom);
 }
 
+Texture::Texture(unsigned char* raw_data, int width_px, int height_px)
+{
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	// Set texture wrapping/filtering options
+	// on currently bound texture object.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width_px, height_px, 0, GL_RGB, GL_UNSIGNED_BYTE, raw_data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+}
+
 void Texture::Delete()
 {
 	glDeleteTextures(1, &textureID);

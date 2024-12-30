@@ -16,13 +16,15 @@
 #include "text_renderer.h"
 #include "powerup.h"
 #include "laser.h"
-#include "block.h"
+#include "blocks/block.h"
 #include "util.h"
+#include "map_generation/map_generator.h"
 
 
 enum GameState {
 	GAME_ACTIVE,
-	GAME_MENU
+	GAME_MENU,
+	DEBUG
 };
 
 enum Direction {
@@ -41,7 +43,8 @@ struct Collision {
 class Game
 {
 public:
-	GameState State = GAME_ACTIVE;
+	//GameState State = GAME_ACTIVE;
+	GameState State = DEBUG;
 
 	Renderer* renderer;
 	TextRenderer* text_renderer;
@@ -50,6 +53,7 @@ public:
 
 	Player* player;
 	Camera* camera;
+	MapGenerator* map_generator;
 
 	ParticleManager* particle_manager;
 
