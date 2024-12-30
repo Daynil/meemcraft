@@ -6,8 +6,8 @@
 
 void BlockLoader::LoadBlocks()
 {
-	ResourceManager::LoadRawModel("block_symmetrical", RawModel(BlockData::vertices, BlockData::texture_coords_symmetrical, BlockData::indices));
-	ResourceManager::LoadRawModel("block_3_part", RawModel(BlockData::vertices, BlockData::texture_coords_3_part, BlockData::indices));
+	ResourceManager::LoadRawModel("block_symmetrical", RawModel(BlockVertices::vertices, BlockVertices::texture_coords_symmetrical, BlockVertices::indices));
+	ResourceManager::LoadRawModel("block_3_part", RawModel(BlockVertices::vertices, BlockVertices::texture_coords_3_part, BlockVertices::indices));
 
 	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
@@ -49,11 +49,11 @@ void BlockLoader::LoadBlocks()
 
 			ResourceManager::LoadTexture(type, Texture(block));
 		}
-		ResourceManager::LoadBlock(
+		BlockData data;
+		data.symmetrical = is_symmetrical;
+		ResourceManager::LoadBlockData(
 			block_type,
-			Block(
-				block_type, glm::vec3(0), is_symmetrical
-			)
+			data
 		);
 	}
 }

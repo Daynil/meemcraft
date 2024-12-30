@@ -42,7 +42,13 @@ constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
 	"OAK_LEAVES",
 };
 
-namespace BlockData
+// Compile-time data we extract based on block texture files
+struct BlockData {
+	// Whether all 6 sides use the same texture
+	bool symmetrical;
+};
+
+namespace BlockVertices
 {
 	const std::vector<float> vertices = {
 		// Front face

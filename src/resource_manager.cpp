@@ -6,7 +6,7 @@ std::map<std::string, RawModel> ResourceManager::RawModels;
 std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture> ResourceManager::Textures;
 std::map<std::string, Sound> ResourceManager::Sounds;
-std::map<BlockType, Block> ResourceManager::BlockTemplates;
+std::map<BlockType, BlockData> ResourceManager::BlockDataMap;
 
 Shader& ResourceManager::LoadShader(std::string name, Shader shader)
 {
@@ -52,15 +52,15 @@ Sound& ResourceManager::GetSound(std::string name)
 	return Sounds.at(name);
 }
 
-Block& ResourceManager::LoadBlock(BlockType type, Block block)
+BlockData& ResourceManager::LoadBlockData(BlockType type, BlockData data)
 {
-	BlockTemplates.emplace(type, block);
-	return BlockTemplates.at(type);
+	BlockDataMap.emplace(type, data);
+	return BlockDataMap.at(type);
 }
 
-Block& ResourceManager::GetBlock(BlockType type)
+BlockData& ResourceManager::GetBlockData(BlockType type)
 {
-	return BlockTemplates.at(type);
+	return BlockDataMap.at(type);
 }
 
 void ResourceManager::Clear()

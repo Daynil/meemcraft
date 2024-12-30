@@ -49,6 +49,7 @@ add_subdirectory(thirdparty/raudio)				# Audio
 add_subdirectory(thirdparty/glm)				# Math
 add_subdirectory(thirdparty/imgui-docking)		# UI
 add_subdirectory(thirdparty/freetype)			# Fonts
+add_subdirectory(thirdparty/perlin_noise)		# Perlin Noise Generator
 
 
 # Define MY_SOURCES to be a list of all the source files for my game 
@@ -116,5 +117,5 @@ list(REMOVE_DUPLICATES MY_INCLUDE_DIRS)
 target_include_directories("${CMAKE_PROJECT_NAME}" PUBLIC ${MY_INCLUDE_DIRS})
 
 target_link_libraries("${CMAKE_PROJECT_NAME}" PRIVATE glm glfw 
-	glad stb_image stb_truetype raudio imgui freetype)
+	glad stb_image stb_truetype raudio imgui freetype perlin_noise)
 

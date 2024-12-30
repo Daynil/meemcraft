@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <raudio.h>
+#include "perlin_noise.hpp"
 
 #include "block_data.h"
 #include "resource_manager.h"
@@ -65,20 +66,29 @@ void Game::ResetGame()
 
 void Game::LoadLevel()
 {
-	Blocks.clear();
+	const siv::PerlinNoise::seed_type seed = 123456u;
+	const siv::PerlinNoise perlin{ seed };
 
-	//Blocks.push_back(
-	//	Block(BlockType::GRASS_BLOCK, glm::vec3(-1, -1, -2), false)
-	//);
-	//Blocks.push_back(
-	//	Block(BlockType::STONE, glm::vec3(-2, -2, -2), true)
-	//);
+	for (int y = 0; y < 5; ++y)
+	{
+		for (int x = 0; x < 5; ++x)
+		{
+			const double noise = perlin.octave2D_01((x * 0.01), (y * 0.01), 4);
+
+			std::cout << noise << '\t';
+		}
+
+		std::cout << '\n';
+	}
+
+	Blocks.clear();
 
 	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
-		Block b = ResourceManager::GetBlock((BlockType)i);
-		b.position = glm::vec3(i, 0, i);
-		Blocks.push_back(b);
+		Blocks.push_back(Block(
+			(BlockType)i,
+			glm::vec3(i, 0, i)
+		));
 	}
 }
 

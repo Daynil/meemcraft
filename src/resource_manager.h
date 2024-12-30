@@ -17,7 +17,7 @@ public:
 	static std::map<std::string, RawModel> RawModels;
 	static std::map<std::string, Texture> Textures;
 	static std::map<std::string, Sound> Sounds;
-	static std::map<BlockType, Block> BlockTemplates;
+	static std::map<BlockType, BlockData> BlockDataMap;
 
 	static Shader& LoadShader(std::string name, Shader shader);
 	static Shader& GetShader(std::string name);
@@ -31,8 +31,8 @@ public:
 	static Sound& LoadRSound(std::string name, std::string sound_path);
 	static Sound& GetSound(std::string name);
 
-	static Block& LoadBlock(BlockType type, Block block);
-	static Block& GetBlock(BlockType type);
+	static BlockData& LoadBlockData(BlockType type, BlockData data);
+	static BlockData& GetBlockData(BlockType type);
 
 	// Properly deallocate all loaded resources
 	static void Clear();

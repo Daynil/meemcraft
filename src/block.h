@@ -10,8 +10,7 @@ class Block : public Entity
 {
 public:
 	BlockType type;
-	bool symmetrical;
+	BlockData& data;
 
-	Block(BlockType type, glm::vec3 position, bool symmetrical);
-	Block(const Block& orig);
+	Block(BlockType type, glm::vec3 position);
 };
