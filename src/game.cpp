@@ -69,15 +69,44 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	map_generator->GenerateMap(128, 10.0, 8, 123456);
+	int chunk_size = 56;
+	auto map = map_generator->GenerateMap(chunk_size, 10.0, 8, 123456);
 
-	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
-	{
-		Blocks.push_back(Block(
-			(BlockType)i,
-			glm::vec3(i, 0, i)
-		));
+	if (State == DEBUG) {
+		map_generator->CreateNoisemapTexture(map);
 	}
+
+	for (int y = 0; y < chunk_size; ++y) {
+		for (int x = 0; x < chunk_size; ++x) {
+			glm::vec3 block_coord(x, 0, y);
+
+			const double noise_value = map[y * chunk_size + x];
+			if (noise_value < 0.3) {
+				Blocks.push_back(
+					Block(BlockType::SAND, block_coord)
+				);
+			}
+			else if (noise_value >= 0.3 && noise_value <= 0.7) {
+				Blocks.push_back(
+					Block(BlockType::GRASS_BLOCK, block_coord)
+				);
+			}
+			else {
+				Blocks.push_back(
+					Block(BlockType::STONE, block_coord)
+				);
+			}
+		}
+	}
+
+	//for (int i = 0; i < chunk_size; i++)
+	//{
+
+	//	Blocks.push_back(Block(
+	//		(BlockType)i,
+	//		glm::vec3(i, 0, i)
+	//	));
+	//}
 }
 
 
@@ -86,7 +115,9 @@ void Game::ProcessInput(float dt)
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
 			std::cout << "Pressed" << std::endl;
-			map_generator->GenerateMap(128, random_float(0.1, 64.0), random_int(1, 16), 123456);
+			auto map = map_generator->GenerateMap(128, random_float(0.1, 64.0), random_int(1, 16), 123456);
+			map_generator->CreateNoisemapTexture(map);
+
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}
 	}
@@ -169,7 +200,9 @@ void Game::Render()
 		text_renderer->RenderText("Press W or S to select level", glm::vec2(210.0f, (LevelHeight / 2.0f) + 30.0f), 0.3f);
 	}
 
-	map_generator->DrawNoisemap();
+	if (State == DEBUG) {
+		map_generator->DrawNoisemap();
+	}
 }
 
 Direction VectorDirection(glm::vec2 target)

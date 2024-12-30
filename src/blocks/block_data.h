@@ -168,23 +168,47 @@ namespace BlockVertices
 	// clockwise. This allows for proper back-face culling (not drawing
 	// stuff that is not visible).
 	const std::vector<unsigned int> indices = {
-		// Front face
-		0,1,3,
-		3,1,2,
+		//// Front face
+		//0,1,3,
+		//3,1,2,
 
-		// Back face
-		4,5,7,
-		7,5,6,
+		//// Back face
+		//4,5,7,
+		//7,5,6,
 
-		// Etc...
-		8,9,11,
-		11,9,10,
-		12,13,15,
-		15,13,14,
-		16,17,19,
-		19,17,18,
-		20,21,23,
-		23,21,22
+		//// Etc...
+		//8,9,11,
+		//11,9,10,
+		//12,13,15,
+		//15,13,14,
+		//16,17,19,
+		//19,17,18,
+		//20,21,23,
+		//23,21,22
+
+		// --- Front face ---
+		0, 2, 1,
+		0, 3, 2,
+
+		// --- Back face ---
+		4, 5, 6,
+		4, 6, 7,
+
+		// --- Right face ---
+		10, 9, 8,
+		10, 8, 11,
+
+		// --- Left face ---
+		12, 13, 14,
+		12, 14, 15,
+
+		// --- Top face ---
+		16, 18, 17,
+		16, 19, 18,
+
+		// --- Bottom face ---
+		20, 21, 22,
+		20, 22, 23
 	};
 }
 

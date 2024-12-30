@@ -47,6 +47,11 @@ Display::Display(float pDisplayWidth, float pDisplayHeight, std::string title)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glEnable(GL_CULL_FACE);
+	// Can confirm culling is working with this
+	//glCullFace(GL_BACK);
+	//glFrontFace(GL_CW);
+
 	// Listen to window resize events and update viewport
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 

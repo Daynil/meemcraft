@@ -47,6 +47,8 @@ public:
 	MapGenerator(Renderer* renderer);
 	~MapGenerator();
 
-	void GenerateMap(int chunk_size, double frequency, unsigned int octaves, unsigned int seed);
+	std::vector<double> GenerateMap(int chunk_size, double frequency, unsigned int octaves, unsigned int seed);
+
+	void CreateNoisemapTexture(std::vector<double> noisemap);
 	void DrawNoisemap();
 };
