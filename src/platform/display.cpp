@@ -49,6 +49,7 @@ Display::Display(float pDisplayWidth, float pDisplayHeight, std::string title)
 
 	glEnable(GL_CULL_FACE);
 	// Can confirm culling is working with this
+	// (reverses culling direction so you'll see the backsides of cubes only.
 	//glCullFace(GL_BACK);
 	//glFrontFace(GL_CW);
 

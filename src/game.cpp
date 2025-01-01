@@ -24,12 +24,6 @@ void Game::Init()
 	BlockLoader block_loader;
 	block_loader.LoadBlocks();
 
-	//for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
-	//{
-	//	std::string type = BlockTypeString[i];
-	//	ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "textures/" + type + ".png", true));
-	//}
-
 	ResourceManager::LoadShader("entity", Shader(RESOURCES_PATH "shaders/entity.shader"));
 	ResourceManager::LoadShader("entity_tinted", Shader(RESOURCES_PATH "shaders/entity_tinted.shader"));
 	ResourceManager::LoadShader("particle", Shader(RESOURCES_PATH "shaders/particle.shader"));
@@ -195,13 +189,8 @@ void Game::Update(float dt)
 
 void Game::Render()
 {
-	//renderer->prepare();
-
-	/*renderer->render(Entity(&ResourceManager::GetRawModel("quad"), &ResourceManager::GetTexture("background"), glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(LevelWidth, LevelHeight, 0)), ResourceManager::GetShader("entity"));*/
-
 	for (auto& block : Blocks)
 	{
-		//renderer->render(block, ResourceManager::GetShader("entity"));
 		rendering_manager->ProcessBlock(&block);
 	}
 
@@ -210,7 +199,6 @@ void Game::Render()
 	}
 
 	rendering_manager->Render();
-	//renderer->render(*player, ResourceManager::GetShader("entity_tinted"));
 
 	text_renderer->RenderText("FPS: " + std::format("{:.2f}", fps), glm::vec2(5.0f, 5.0f), 0.4f);
 
