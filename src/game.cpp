@@ -14,8 +14,9 @@
 
 #include "blocks/block_data.h"
 #include "resource_manager.h"
-#include "text_renderer.h"
+#include "rendering/text_renderer.h"
 #include "map_generation/map_generator.h"
+#include "rendering/rendering_manager.h"
 
 
 void Game::Init()
@@ -46,8 +47,10 @@ void Game::Init()
 
 	camera = new Camera();
 	renderer->init(camera);
+	rendering_manager = new RenderingManager(renderer, renderer->display);
+	rendering_manager->Init(camera);
 
-	map_generator = new MapGenerator(renderer);
+	map_generator = new MapGenerator(rendering_manager);
 
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),
@@ -69,7 +72,17 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	int chunk_size = 56;
+	// Performance good, 30-40fps
+	int chunk_size = 64;
+
+	// 10-15 fps?
+	//int chunk_size = 128;
+
+	// Barely runs, 1-5fps
+	//int chunk_size = 256;
+
+	// Basically freezes and doesn't even run 
+	//int chunk_size = 512;
 	auto map = map_generator->GenerateMap(chunk_size, 10.0, 8, 123456);
 
 	if (State == DEBUG) {
@@ -182,15 +195,21 @@ void Game::Update(float dt)
 
 void Game::Render()
 {
-	renderer->prepare();
+	//renderer->prepare();
 
 	/*renderer->render(Entity(&ResourceManager::GetRawModel("quad"), &ResourceManager::GetTexture("background"), glm::vec3(0, 0, 0), glm::vec3(0), glm::vec3(LevelWidth, LevelHeight, 0)), ResourceManager::GetShader("entity"));*/
 
 	for (auto& block : Blocks)
 	{
-		renderer->render(block, ResourceManager::GetShader("entity"));
+		//renderer->render(block, ResourceManager::GetShader("entity"));
+		rendering_manager->ProcessBlock(&block);
 	}
 
+	if (State == DEBUG) {
+		map_generator->DrawNoisemap();
+	}
+
+	rendering_manager->Render();
 	//renderer->render(*player, ResourceManager::GetShader("entity_tinted"));
 
 	text_renderer->RenderText("FPS: " + std::format("{:.2f}", fps), glm::vec2(5.0f, 5.0f), 0.4f);
@@ -198,10 +217,6 @@ void Game::Render()
 	if (State == GAME_MENU) {
 		text_renderer->RenderText("Press Enter or Start to start", glm::vec2(140.0f, LevelHeight / 2.0f), 0.4f);
 		text_renderer->RenderText("Press W or S to select level", glm::vec2(210.0f, (LevelHeight / 2.0f) + 30.0f), 0.3f);
-	}
-
-	if (State == DEBUG) {
-		map_generator->DrawNoisemap();
 	}
 }
 
@@ -244,4 +259,5 @@ Game::~Game()
 	delete camera;
 	delete text_renderer;
 	delete map_generator;
+	delete rendering_manager;
 }

@@ -11,7 +11,7 @@
 
 // Our stuff
 #include "display.h"
-#include "renderer.h"
+#include "rendering/renderer.h"
 #include "controls.h"
 #include "game.h"
 #include "resource_manager.h"

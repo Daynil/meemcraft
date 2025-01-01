@@ -8,7 +8,7 @@
 #include "entity.h"
 #include "camera.h"
 #include "display.h"
-#include "shader_s.h"
+#include "shader.h"
 
 class Renderer
 {
@@ -19,6 +19,8 @@ public:
 	Renderer(Display* display) : display(display) {};
 
 	void init(Camera* camera);
-	void render(Entity& entity, Shader& shader);
+	void prepare_entity(Entity& entity);
+	void cleanup_entity(Entity& entity);
+	void render(Entity& entity);
 	void prepare();
 };

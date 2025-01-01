@@ -4,10 +4,10 @@
 
 #include "perlin_noise.hpp"
 
-#include "renderer.h"
+#include "rendering/rendering_manager.h"
 #include "model.h"
-#include "texture.h"
-#include "shader_s.h"
+#include "rendering/texture.h"
+#include "rendering/shader.h"
 
 namespace NoisemapVertices
 {
@@ -36,15 +36,16 @@ namespace NoisemapVertices
 class MapGenerator
 {
 public:
-	Renderer* renderer;
+	RenderingManager* rendering_manager;
 
 	RawModel* raw_model;
 	Shader* shader;
 	Texture* texture;
 
+	Entity noisemap;
 
 	MapGenerator() = default;
-	MapGenerator(Renderer* renderer);
+	MapGenerator(RenderingManager* rendering_manager);
 	~MapGenerator();
 
 	std::vector<double> GenerateMap(int chunk_size, double frequency, unsigned int octaves, unsigned int seed);

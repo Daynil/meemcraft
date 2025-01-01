@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "texture.h"
+#include "rendering/texture.h"
 
 // This is the raw model with just the vertex data
 class RawModel

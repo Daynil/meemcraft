@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "entity.h"
-#include "shader_s.h"
+#include "rendering/shader.h"
 #include "block_data.h"
 
 class Block : public Entity

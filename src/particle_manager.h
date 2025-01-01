@@ -6,10 +6,10 @@
 
 #include "entity.h"
 #include "particle.h"
-#include "shader_s.h"
+#include "rendering/shader.h"
 #include "raw_model.h"
-#include "texture.h"
-#include "renderer.h"
+#include "rendering/texture.h"
+#include "rendering/renderer.h"
 
 class ParticleManager
 {

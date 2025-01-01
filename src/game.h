@@ -4,18 +4,14 @@
 #include <string>
 #include <vector>
 
-#include "texture.h"
+#include "rendering/texture.h"
 #include "entity.h"
-#include "shader_s.h"
+#include "rendering/shader.h"
 #include "raw_model.h"
-#include "brick.h"
-#include "renderer.h"
-#include "player.h"
-#include "ball.h"
+#include "rendering/renderer.h"
+#include "rendering/rendering_manager.h"
 #include "particle_manager.h"
-#include "text_renderer.h"
-#include "powerup.h"
-#include "laser.h"
+#include "rendering/text_renderer.h"
 #include "blocks/block.h"
 #include "util.h"
 #include "map_generation/map_generator.h"
@@ -48,10 +44,11 @@ public:
 
 	Renderer* renderer;
 	TextRenderer* text_renderer;
+	RenderingManager* rendering_manager;
 
 	std::vector<Block> Blocks;
 
-	Player* player;
+	//Player* player;
 	Camera* camera;
 	MapGenerator* map_generator;
 
@@ -94,13 +91,13 @@ public:
 	void ResetGame();
 	void LoadLevel();
 
-	void RollForPowerup(Brick& brick_destroyed);
+	//void RollForPowerup(Brick& brick_destroyed);
 
 	// Game loop
 	void ProcessInput(float dt);
 	void Update(float dt);
 	void Render();
 	void CheckCollisions();
-	Collision CheckBallCollision(Ball& one, Entity& two);
+	//Collision CheckBallCollision(Ball& one, Entity& two);
 	Collision CheckCollision(Entity& one, Entity& two);
 };

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "util.h"
+#include "resource_manager.h"
 
 void ParticleManager::Init(unsigned int p_num_particles)
 {
@@ -14,6 +15,7 @@ void ParticleManager::Init(unsigned int p_num_particles)
 		particles.push_back(Particle(
 			model,
 			texture,
+			&ResourceManager::GetShader("particle"),
 			ref_entity->position + glm::vec3(random_x, random_y, 0.0f) + glm::vec3(ref_entity->scale.x / 2.0f, ref_entity->scale.x / 2.0f, 0.0f),
 			glm::vec3(0),
 			glm::vec3(ref_entity->scale / 8.0f),
@@ -29,7 +31,7 @@ void ParticleManager::Render(Renderer& renderer)
 	for (auto& particle : particles)
 	{
 		if (particle.color.a > 0)
-			renderer.render(particle, *shader);
+			renderer.render(particle);
 	}
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

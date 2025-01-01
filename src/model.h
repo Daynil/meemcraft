@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "texture.h"
+#include "rendering/texture.h"
 #include "raw_model.h"
 
 class Model

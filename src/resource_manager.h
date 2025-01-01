@@ -4,9 +4,9 @@
 #include <string>
 #include <raudio.h>
 
-#include "shader_s.h"
+#include "rendering/shader.h"
 #include "raw_model.h"
-#include "texture.h"
+#include "rendering/texture.h"
 #include "blocks/block.h"
 #include "blocks/block_data.h"
 

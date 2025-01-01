@@ -13,4 +13,5 @@ Block::Block(BlockType type, glm::vec3 p_position) : type(type), data(ResourceMa
 	else
 		model = &ResourceManager::GetRawModel("block_3_part");
 	texture = &ResourceManager::GetTexture(BlockTypeString[type]);
+	shader = &ResourceManager::GetShader("entity");
 }

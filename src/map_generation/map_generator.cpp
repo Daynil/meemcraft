@@ -12,7 +12,7 @@
 #include "entity.h"
 
 
-MapGenerator::MapGenerator(Renderer* renderer) : renderer(renderer)
+MapGenerator::MapGenerator(RenderingManager* rendering_manager) : rendering_manager(rendering_manager)
 {
 	// Just a front-facing quad to render the noise map on
 	raw_model = new RawModel(NoisemapVertices::vertices, NoisemapVertices::texture_coords, NoisemapVertices::indices);
@@ -80,11 +80,13 @@ void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
 
 void MapGenerator::DrawNoisemap()
 {
-	Entity noisemap(
+	noisemap = Entity(
 		raw_model,
 		texture,
+		shader,
 		glm::vec3(1, 1, -2),
 		glm::vec3(0),
 		glm::vec3(10));
-	renderer->render(noisemap, *shader);
+
+	rendering_manager->ProcessEntity(&noisemap);
 }

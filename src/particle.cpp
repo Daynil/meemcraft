@@ -1,6 +1,6 @@
 #include "particle.h"
 
-void Particle::ProvideRenderData(Shader& shader)
+void Particle::ProvideRenderData()
 {
-	shader.setVec4("u_color", color);
+	shader->setVec4("u_color", color);
 }
