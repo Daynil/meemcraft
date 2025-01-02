@@ -12,6 +12,12 @@ void BlockLoader::LoadBlocks()
 	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
 		BlockType block_type = (BlockType)i;
+
+		// Skip all model stuff for air
+		if (block_type == BlockType::AIR) {
+			continue;
+		}
+
 		std::string type = BlockTypeString[i];
 
 		bool is_symmetrical = !std::filesystem::exists(RESOURCES_PATH "assets/blocks/" + type + "_top.png");

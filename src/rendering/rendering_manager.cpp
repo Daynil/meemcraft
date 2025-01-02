@@ -58,3 +58,8 @@ void RenderingManager::ProcessEntity(Entity* entity)
 	entities.push_back(entity);
 }
 
+void RenderingManager::ShouldBlockRender(Block* block)
+{
+
+}
+

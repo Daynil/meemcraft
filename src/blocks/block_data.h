@@ -4,6 +4,9 @@
 #include <vector>
 
 enum BlockType {
+	// AKA no block
+	AIR,
+
 	// Environmental
 	GRASS_BLOCK,
 	DIRT,
@@ -25,6 +28,8 @@ enum BlockType {
 };
 
 constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
+	"AIR",
+
 	// Environmental
 	"GRASS_BLOCK",
 	"DIRT",
@@ -50,24 +55,113 @@ struct BlockData {
 
 namespace BlockVertices
 {
+	const unsigned int blocks_in_texture = 3;
+	const float x_coord_unit = 1.0f / blocks_in_texture;
+
+	// Per-face vertices
+	const std::vector<float> vertices_front = {
+		-0.5f,   0.5f,  0.5f,                 // Top-left        
+		-0.5f,  -0.5f,  0.5f,                 // Bottom-left
+		 0.5f,  -0.5f,  0.5f,                 // Bottom-right
+		 0.5f,   0.5f,  0.5f,                 // Top-right
+	};
+
+	const std::vector<float> vertices_back = {
+		  0.5f,  0.5f, -0.5f,
+		  0.5f, -0.5f, -0.5f,
+		 -0.5f, -0.5f, -0.5f,
+		 -0.5f,  0.5f, -0.5f,
+	};
+
+	const std::vector<float> vertices_right = {
+		 0.5f,   0.5f,  0.5f,
+		 0.5f,  -0.5f,  0.5f,
+		 0.5f,  -0.5f, -0.5f,
+		 0.5f,   0.5f, -0.5f,
+	};
+
+	const std::vector<float> vertices_left = {
+		 -0.5f,  0.5f, -0.5f,
+		 -0.5f, -0.5f, -0.5f,
+		 -0.5f, -0.5f,  0.5f,
+		 -0.5f,  0.5f,  0.5f,
+	};
+
+	const std::vector<float> vertices_top = {
+		 -0.5f,  0.5f, -0.5f,
+		 -0.5f,  0.5f,  0.5f,
+		  0.5f,  0.5f,  0.5f,
+		  0.5f,  0.5f, -0.5f,
+	};
+
+	const std::vector<float> vertices_bottom = {
+		 -0.5f, -0.5f, -0.5f,
+		  0.5f, -0.5f, -0.5f,
+		  0.5f, -0.5f,  0.5f,
+		 -0.5f, -0.5f,  0.5f
+	};
+
+	// Side faces (front/back/left/right) are all the same texture
+	// on the multi-texture blocks.
+	// E.g. on a grass block, grass+dirt
+	const std::vector<float> texture_coords_3_part_sides = {
+		x_coord_unit, 0,                  // Bottom-left of Grass+Dirt
+		x_coord_unit, 1,                  // Top-left of Grass+Dirt
+		x_coord_unit * 2, 1,              // Top-right of Grass+Dirt
+		x_coord_unit * 2, 0,              // Bottom-right of Grass+Dirt
+	};
+
+	// Grass only on grass block
+	const std::vector<float> texture_coords_3_part_top = {
+		0, 0,                             // Bottom-left of Grass
+		0, 1,                             // Top-left of Grass
+		x_coord_unit, 1,                  // Top-right of Grass
+		x_coord_unit, 0,                  // Bottom-right of Grass
+	};
+
+	// Dirt only on grass block
+	const std::vector<float> texture_coords_3_part_bottom = {
+		// Bottom face (Dirt)
+		x_coord_unit * 2, 0,              // Bottom-left of Dirt
+		x_coord_unit * 2, 1,              // Top-left of Dirt
+		x_coord_unit * 3, 1,              // Top-right of Dirt
+		x_coord_unit * 3, 0               // Bottom-right of Dirt
+	};
+
+	// Same for all faces
+	const std::vector<float> texture_coords_symmetrical_face = {
+		0, 0,                            // Bottom-left
+		0, 1,                            // Top-left
+		1, 1,                            // Top-right
+		1, 0,                            // Bottom-right
+	};
+
+	const std::vector<unsigned int> indices_face = {
+		0,1,3,
+		3,1,2,
+	};
+
+
+
+	// Per-cube vertices
 	const std::vector<float> vertices = {
 		// Front face
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
+		-0.5f,   0.5f,  0.5f,                 // Top-left        
+		-0.5f,  -0.5f,  0.5f,                 // Bottom-left
+		 0.5f,  -0.5f,  0.5f,                 // Bottom-right
+		 0.5f,   0.5f,  0.5f,                 // Top-right
 
 		 // Back face
-		 -0.5f,  0.5f,  0.5f,
-		 -0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
+		  0.5f,  0.5f, -0.5f,
+		  0.5f, -0.5f, -0.5f,
+		 -0.5f, -0.5f, -0.5f,
+		 -0.5f,  0.5f, -0.5f,
 
 		 // Right face
-		 0.5f,  0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
+		 0.5f,   0.5f,  0.5f,
+		 0.5f,  -0.5f,  0.5f,
+		 0.5f,  -0.5f, -0.5f,
+		 0.5f,   0.5f, -0.5f,
 
 		 // Left face
 		 -0.5f,  0.5f, -0.5f,
@@ -76,21 +170,20 @@ namespace BlockVertices
 		 -0.5f,  0.5f,  0.5f,
 
 		 // Top face
-		 -0.5f,  0.5f,  0.5f,
 		 -0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f,  0.5f,
+		 -0.5f,  0.5f,  0.5f,
+		  0.5f,  0.5f,  0.5f,
+		  0.5f,  0.5f, -0.5f,
 
-		 // Bottom face
-		 -0.5f, -0.5f,  0.5f,
+		  // Bottom face
 		 -0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f
+		  0.5f, -0.5f, -0.5f,
+		  0.5f, -0.5f,  0.5f,
+		 -0.5f, -0.5f,  0.5f
 	};
 
-	const unsigned int blocks_in_texture = 3;
-	const float x_coord_unit = 1.0f / blocks_in_texture;
-
+	// Note top and bottom inverted due to texture coord system
+	// (0 is bottom left)
 	const std::vector<float> texture_coords_3_part = {
 		// Front face (Grass + Dirt)
 		x_coord_unit, 0,                  // Bottom-left of Grass+Dirt
@@ -168,47 +261,29 @@ namespace BlockVertices
 	// clockwise. This allows for proper back-face culling (not drawing
 	// stuff that is not visible).
 	const std::vector<unsigned int> indices = {
-		//// Front face
-		//0,1,3,
-		//3,1,2,
+		// Front face
+		0,1,3,
+		3,1,2,
 
-		//// Back face
-		//4,5,7,
-		//7,5,6,
+		// Back face
+		4,5,7,
+		7,5,6,
 
-		//// Etc...
-		//8,9,11,
-		//11,9,10,
-		//12,13,15,
-		//15,13,14,
-		//16,17,19,
-		//19,17,18,
-		//20,21,23,
-		//23,21,22
+		// Right face
+		8,9,11,
+		11,9,10,
 
-		// --- Front face ---
-		0, 2, 1,
-		0, 3, 2,
+		// Left face
+		12,13,15,
+		15,13,14,
 
-		// --- Back face ---
-		4, 5, 6,
-		4, 6, 7,
+		// Top face
+		16,17,19,
+		19,17,18,
 
-		// --- Right face ---
-		10, 9, 8,
-		10, 8, 11,
-
-		// --- Left face ---
-		12, 13, 14,
-		12, 14, 15,
-
-		// --- Top face ---
-		16, 18, 17,
-		16, 19, 18,
-
-		// --- Bottom face ---
-		20, 21, 22,
-		20, 22, 23
+		// Bottom face
+		20,21,23,
+		23,21,22
 	};
 }
 

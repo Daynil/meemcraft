@@ -10,12 +10,13 @@
 #include "resource_manager.h"
 
 #include "entity.h"
+#include "block_data.h"
 
 
 MapGenerator::MapGenerator(RenderingManager* rendering_manager) : rendering_manager(rendering_manager)
 {
 	// Just a front-facing quad to render the noise map on
-	raw_model = new RawModel(NoisemapVertices::vertices, NoisemapVertices::texture_coords, NoisemapVertices::indices);
+	raw_model = new RawModel(BlockVertices::vertices_front, BlockVertices::texture_coords_symmetrical_face, BlockVertices::indices_face);
 	shader = new Shader(RESOURCES_PATH "shaders/noise_map.shader");
 }
 
@@ -84,7 +85,7 @@ void MapGenerator::DrawNoisemap()
 		raw_model,
 		texture,
 		shader,
-		glm::vec3(1, 1, -2),
+		glm::vec3(0, 0, -16),
 		glm::vec3(0),
 		glm::vec3(10));
 

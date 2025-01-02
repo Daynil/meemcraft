@@ -1,5 +1,4 @@
 #include "renderer.h"
-#include "renderer.h"
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/glm.hpp>

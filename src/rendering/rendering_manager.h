@@ -33,4 +33,7 @@ public:
 	void Render();
 	void ProcessBlock(Block* block);
 	void ProcessEntity(Entity* entity);
+
+private:
+	void ShouldBlockRender(Block* block);
 };
