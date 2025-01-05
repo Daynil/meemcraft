@@ -11,6 +11,7 @@ public:
 	unsigned int VAO_ID;
 	unsigned int vertex_count;
 
+	RawModel() {};
 	RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int >& vertex_indices);
 
 	void Delete();

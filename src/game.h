@@ -15,6 +15,7 @@
 #include "blocks/block.h"
 #include "util.h"
 #include "map_generation/map_generator.h"
+#include "blocks/chunk.h"
 
 
 enum GameState {
@@ -47,6 +48,7 @@ public:
 	RenderingManager* rendering_manager;
 
 	std::vector<Block> Blocks;
+	std::vector<Chunk> Chunks;
 
 	//Player* player;
 	Camera* camera;

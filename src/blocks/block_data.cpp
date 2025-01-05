@@ -9,6 +9,9 @@ void BlockLoader::LoadBlocks()
 	ResourceManager::LoadRawModel("block_symmetrical", RawModel(BlockVertices::vertices, BlockVertices::texture_coords_symmetrical, BlockVertices::indices));
 	ResourceManager::LoadRawModel("block_3_part", RawModel(BlockVertices::vertices, BlockVertices::texture_coords_3_part, BlockVertices::indices));
 
+	std::vector<BlockData> blocks_data;
+	int textures_loaded = 0;
+
 	for (int i = 0; i < BlockType::BLOCK_COUNT; i++)
 	{
 		BlockType block_type = (BlockType)i;
@@ -19,11 +22,17 @@ void BlockLoader::LoadBlocks()
 		}
 
 		std::string type = BlockTypeString[i];
+		BlockData data;
 
-		bool is_symmetrical = !std::filesystem::exists(RESOURCES_PATH "assets/blocks/" + type + "_top.png");
+		bool is_symmetrical = !std::filesystem::exists(RESOURCES_PATH "assets/blocks/" + type + "_top.png") && !std::filesystem::exists(RESOURCES_PATH "assets/blocks" + type + "_bottom.png");
+
+		data.symmetrical = is_symmetrical;
 
 		if (is_symmetrical) {
-			ResourceManager::LoadTexture(type, Texture(RESOURCES_PATH "assets/blocks/" + type + ".png"));
+			data.top_texture_path = RESOURCES_PATH "assets/blocks/" + type + ".png";
+			ResourceManager::LoadTexture(type, Texture(data.top_texture_path));
+			data.top_texture_num = textures_loaded;
+			textures_loaded++;
 		}
 		else {
 			std::vector<std::string> block;
@@ -54,12 +63,26 @@ void BlockLoader::LoadBlocks()
 			}
 
 			ResourceManager::LoadTexture(type, Texture(block));
+
+			data.top_texture_path = block.at(0);
+			data.sides_texture_path = block.at(1);
+			data.bottom_texture_path = block.at(2);
+
+			data.top_texture_num = textures_loaded;
+			data.sides_texture_num = textures_loaded + 1;
+			data.bottom_texture_num = textures_loaded + 2;
+			textures_loaded += 3;
 		}
-		BlockData data;
-		data.symmetrical = is_symmetrical;
+
+		blocks_data.push_back(data);
+
 		ResourceManager::LoadBlockData(
 			block_type,
 			data
 		);
 	}
+
+	images_in_block_texture_atlas = textures_loaded;
+	texture_atlas_x_unit = 1.0f / textures_loaded;
+	ResourceManager::LoadTexture("block_atlas", Texture(blocks_data, textures_loaded));
 }

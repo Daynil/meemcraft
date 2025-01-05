@@ -2,6 +2,8 @@
 
 #include <array>
 #include <vector>
+#include <string>
+#include <map>
 
 enum BlockType {
 	// AKA no block
@@ -51,12 +53,70 @@ constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
 struct BlockData {
 	// Whether all 6 sides use the same texture
 	bool symmetrical;
+
+	std::string top_texture_path;
+	std::string sides_texture_path;
+	std::string bottom_texture_path;
+
+	// Order in texture atlas
+	int sides_texture_num;
+	int top_texture_num;
+	int bottom_texture_num;
 };
 
 namespace BlockVertices
 {
+	enum BlockFace {
+		LEFT,
+		RIGHT,
+		FRONT,
+		BACK,
+		TOP,
+		BOTTOM,
+		FACES_COUNT
+	};
+
 	const unsigned int blocks_in_texture = 3;
 	const float x_coord_unit = 1.0f / blocks_in_texture;
+
+	const std::map<BlockFace, std::vector<float>> vertices_face = {
+		{ LEFT, {
+			-0.5f,  0.5f, -0.5f,
+			-0.5f, -0.5f, -0.5f,
+			-0.5f, -0.5f,  0.5f,
+			-0.5f,  0.5f,  0.5f,
+		}},
+		{ RIGHT, {
+			0.5f,   0.5f,  0.5f,
+			0.5f,  -0.5f,  0.5f,
+			0.5f,  -0.5f, -0.5f,
+			0.5f,   0.5f, -0.5f,
+		}},
+		{ FRONT, {
+			-0.5f,   0.5f,  0.5f,                 // Top-left        
+			-0.5f,  -0.5f,  0.5f,                 // Bottom-left
+			 0.5f,  -0.5f,  0.5f,                 // Bottom-right
+			 0.5f,   0.5f,  0.5f,                 // Top-right
+		}},
+		{ BACK, {
+			  0.5f,  0.5f, -0.5f,
+			  0.5f, -0.5f, -0.5f,
+			 -0.5f, -0.5f, -0.5f,
+			 -0.5f,  0.5f, -0.5f,
+		}},
+		{ TOP, {
+			 -0.5f,  0.5f, -0.5f,
+			 -0.5f,  0.5f,  0.5f,
+			  0.5f,  0.5f,  0.5f,
+			  0.5f,  0.5f, -0.5f,
+		}},
+		{ BOTTOM, {
+			 -0.5f, -0.5f, -0.5f,
+			  0.5f, -0.5f, -0.5f,
+			  0.5f, -0.5f,  0.5f,
+			 -0.5f, -0.5f,  0.5f
+		}}
+	};
 
 	// Per-face vertices
 	const std::vector<float> vertices_front = {
@@ -100,6 +160,25 @@ namespace BlockVertices
 		  0.5f, -0.5f,  0.5f,
 		 -0.5f, -0.5f,  0.5f
 	};
+
+	inline std::vector<float> texture_coords_face(float texture_atlas_x_unit, int atlas_texture_num)
+	{
+		return {
+			texture_atlas_x_unit * atlas_texture_num, 0,              // Bottom-left
+			texture_atlas_x_unit * atlas_texture_num, 1,              // Top-left
+			texture_atlas_x_unit * (atlas_texture_num + 1), 1,        // Top-right
+			texture_atlas_x_unit * (atlas_texture_num + 1), 0         // Bottom-right
+		};
+	}
+
+	inline std::vector<unsigned int> mesh_indices_face(unsigned int indices_position)
+	{
+		int indices_per_face = 4;
+		return {
+			0 + (indices_position * indices_per_face), 1 + (indices_position * indices_per_face), 3 + (indices_position * indices_per_face),
+			3 + (indices_position * indices_per_face), 1 + (indices_position * indices_per_face), 2 + (indices_position * indices_per_face),
+		};
+	}
 
 	// Side faces (front/back/left/right) are all the same texture
 	// on the multi-texture blocks.
@@ -290,6 +369,9 @@ namespace BlockVertices
 class BlockLoader
 {
 public:
+	int images_in_block_texture_atlas;
+	float texture_atlas_x_unit;
+
 	BlockLoader() {};
 
 	void LoadBlocks();

@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "block_data.h"
+
 class Texture
 {
 public:
@@ -16,6 +18,9 @@ public:
 	Texture(std::vector<std::string> texturePaths, bool stack_horizontal = true);
 	// Loads raw byte data as a single texture
 	Texture(unsigned char* raw_data, int width_px, int height_px);
+
+	// Loads texture atlas from a vector of block data
+	Texture(std::vector<BlockData> blocks_data, int num_textures);
 
 	void Delete();
 };

@@ -19,6 +19,8 @@ public:
 	static std::map<std::string, Sound> Sounds;
 	static std::map<BlockType, BlockData> BlockDataMap;
 
+	static float texture_atlas_x_unit;
+
 	static Shader& LoadShader(std::string name, Shader shader);
 	static Shader& GetShader(std::string name);
 

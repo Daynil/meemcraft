@@ -33,6 +33,22 @@ void RenderingManager::Render()
 		}
 	}
 
+	for (auto it = chunks.begin(); it != chunks.end(); ++it) {
+		auto chunk = *it;
+		if (it == chunks.begin()) {
+			renderer->prepare_entity(*chunk);
+		}
+
+		// Per-entity functions
+		renderer->render(*chunk);
+
+		// Functions shared by whole group
+		if (std::next(it) == chunks.end()) {
+			renderer->cleanup_entity(*chunk);
+		}
+	}
+
+
 	for (const auto& entity : entities) {
 		renderer->prepare_entity(*entity);
 		renderer->render(*entity);
@@ -51,6 +67,11 @@ void RenderingManager::ProcessBlock(Block* block)
 		block_group = result.first;
 	}
 	block_group->second.push_back(block);
+}
+
+void RenderingManager::ProcessChunk(Chunk* chunk)
+{
+	chunks.push_back(chunk);
 }
 
 void RenderingManager::ProcessEntity(Entity* entity)

@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int>& vertex_indices)
+RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int>& vertex_indices) : vertex_positions(vertex_positions), vertex_texture_uvs(vertex_texture_uvs), vertex_indices(vertex_indices)
 {
 	// Create VAO to store our data in
 	// VAO = vertex array objects (stores configuration of the attributes)

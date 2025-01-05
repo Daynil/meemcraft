@@ -7,6 +7,7 @@ std::map<std::string, Shader> ResourceManager::Shaders;
 std::map<std::string, Texture> ResourceManager::Textures;
 std::map<std::string, Sound> ResourceManager::Sounds;
 std::map<BlockType, BlockData> ResourceManager::BlockDataMap;
+float ResourceManager::texture_atlas_x_unit = 0.0f;
 
 Shader& ResourceManager::LoadShader(std::string name, Shader shader)
 {

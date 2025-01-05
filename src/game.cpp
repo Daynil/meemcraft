@@ -23,6 +23,7 @@ void Game::Init()
 {
 	BlockLoader block_loader;
 	block_loader.LoadBlocks();
+	ResourceManager::texture_atlas_x_unit = block_loader.texture_atlas_x_unit;
 
 	ResourceManager::LoadShader("entity", Shader(RESOURCES_PATH "shaders/entity.shader"));
 	ResourceManager::LoadShader("entity_tinted", Shader(RESOURCES_PATH "shaders/entity_tinted.shader"));
@@ -82,15 +83,23 @@ void Game::LoadLevel()
 	//int chunk_size = 512;
 
 	// 1-5fps
-	glm::vec3 chunk_size = glm::vec3(16, 256, 16);
+	//glm::vec3 map_size = glm::vec3(16, 256, 16);
+	glm::vec3 map_size = glm::vec3(16, 32, 16);
 
-	auto map = map_generator->GenerateMap(chunk_size.x, 10.0, 8, 123456);
+	auto map = map_generator->GenerateMap(map_size.x, 10.0, 8, 123456);
 
 	if (State == DEBUG) {
 		map_generator->CreateNoisemapTexture(map);
 	}
 
-	Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+
+	Chunk chunk(glm::vec3(0, 0, -2));
+	chunk.GenerateMesh(map);
+
+	//chunk.ChunkTest();
+
+	Chunks.push_back(chunk);
 
 	//for (int y = 0; y < chunk_size.y; ++y) {
 	//	for (int z = 0; z < chunk_size.z; ++z) {
@@ -202,6 +211,11 @@ void Game::Render()
 	for (auto& block : Blocks)
 	{
 		rendering_manager->ProcessBlock(&block);
+	}
+
+	for (auto& chunk : Chunks)
+	{
+		rendering_manager->ProcessChunk(&chunk);
 	}
 
 	if (State == DEBUG) {
