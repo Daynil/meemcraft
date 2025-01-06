@@ -113,6 +113,7 @@ void Game::LoadLevel()
 			);
 
 			std::vector<double> chunk_map_data;
+			chunk_map_data.reserve(Chunk::CHUNK_SIZE_Z * Chunk::CHUNK_SIZE_Z);
 			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
 				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
 				chunk_map_data.insert(chunk_map_data.end(), map.begin() + row_start, map.begin() + row_start + Chunk::CHUNK_SIZE_X);

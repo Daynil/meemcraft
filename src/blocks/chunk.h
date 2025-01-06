@@ -10,7 +10,7 @@ class Chunk : public Entity
 {
 public:
 	static const int CHUNK_SIZE_X = 16;
-	static const int CHUNK_SIZE_Y = 32;
+	static const int CHUNK_SIZE_Y = 256;
 	static const int CHUNK_SIZE_Z = 16;
 
 	BlockType blocks[CHUNK_SIZE_X][CHUNK_SIZE_Y][CHUNK_SIZE_Z];
@@ -76,17 +76,63 @@ public:
 		shader = &ResourceManager::GetShader("entity");
 	};
 
+	BlockType GetBlockType(double noise_value, int y)
+	{
+		float sea_level_start = 0.5f;
+		float sea_level_end = 0.55f;
+		int sea_height = CHUNK_SIZE_Y / 2;
+		float mountains = 0.7f;
+
+		BlockType block = BlockType::AIR;
+
+		// Above ground
+		if (noise_value >= sea_level_start) {
+			int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
+
+			if (noise_value < mountains) {
+				if (noise_value <= sea_level_end) {
+					if (y <= area_height) {
+						block = BlockType::SAND;
+					}
+				}
+				else {
+					if (y <= area_height) {
+						block = BlockType::GRASS_BLOCK;
+					}
+				}
+			}
+			else {
+				if (y <= area_height) {
+					block = BlockType::STONE;
+				}
+			}
+		}
+		// Underground
+		else {
+			if (y < sea_height) {
+				block = BlockType::STONE;
+			}
+		}
+
+		return block;
+	};
+
 	void GenerateMesh(std::vector<double> chunk_map)
 	{
 		std::vector<float> vertex_positions;
 		std::vector<float> vertex_texture_coords;
 		std::vector<unsigned int> vertex_indices;
 
+		vertex_positions.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 3);
+		vertex_texture_coords.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 2);
+		vertex_indices.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 6);
+
 		float texture_atlas_x_unit = ResourceManager::texture_atlas_x_unit;
 
 		int total_faces_rendered = 0;
 
-		float sea_level = 0.5f;
+		float sea_level_start = 0.5f;
+		float sea_level_end = 0.55f;
 		int sea_height = CHUNK_SIZE_Y / 2;
 		float mountains = 0.7f;
 
@@ -94,47 +140,7 @@ public:
 			for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 				for (int z = 0; z < CHUNK_SIZE_Z; z++) {
 					const double noise_value = chunk_map[z * CHUNK_SIZE_X + x];
-
-					// Above ground
-					if (noise_value >= sea_level) {
-						if (noise_value < mountains) {
-							if (noise_value <= sea_level + 0.1f) {
-								if (y <= sea_height) {
-									blocks[x][y][z] = BlockType::SAND;
-								}
-								else {
-									blocks[x][y][z] = BlockType::AIR;
-								}
-							}
-							else {
-								int hill_height = CHUNK_SIZE_Y * noise_value;
-								if (y <= hill_height) {
-									blocks[x][y][z] = BlockType::GRASS_BLOCK;
-								}
-								else {
-									blocks[x][y][z] = BlockType::AIR;
-								}
-							}
-						}
-						else {
-							int mountain_height = CHUNK_SIZE_Y * noise_value;
-							if (y <= mountain_height) {
-								blocks[x][y][z] = BlockType::STONE;
-							}
-							else {
-								blocks[x][y][z] = BlockType::AIR;
-							}
-						}
-					}
-					// Underground
-					else {
-						if (y < sea_height) {
-							blocks[x][y][z] = BlockType::STONE;
-						}
-						else {
-							blocks[x][y][z] = BlockType::AIR;
-						}
-					}
+					blocks[x][y][z] = GetBlockType(noise_value, y);
 				}
 			}
 		}
