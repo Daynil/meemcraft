@@ -84,7 +84,16 @@ void Game::LoadLevel()
 
 	// 1-5fps
 	//glm::vec3 map_size = glm::vec3(16, 256, 16);
-	glm::vec3 map_size = glm::vec3(16, 32, 16);
+
+	// TODO:
+	//  chunk interiors still generating when not needed
+	//  view frustrum culling
+	//  memory leak?
+
+	// Some multiple of 2
+	int num_chunks = 8;
+	int chunks_per_side = num_chunks / 2;
+	glm::vec3 map_size = glm::vec3(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_Y, Chunk::CHUNK_SIZE_Z * chunks_per_side);
 
 	auto map = map_generator->GenerateMap(map_size.x, 10.0, 8, 123456);
 
@@ -94,37 +103,25 @@ void Game::LoadLevel()
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
 
-	Chunk chunk(glm::vec3(0, 0, -2));
-	chunk.GenerateMesh(map);
+	for (int cz = 0; cz < chunks_per_side; cz++) {
+		for (int cx = 0; cx < chunks_per_side; cx++) {
+			Chunk chunk(glm::vec3(
+				(cx * Chunk::CHUNK_SIZE_X),
+				// Shift sea level to y = 0
+				-(Chunk::CHUNK_SIZE_Y / 2),
+				(cz * Chunk::CHUNK_SIZE_Z))
+			);
 
-	//chunk.ChunkTest();
+			std::vector<double> chunk_map_data;
+			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
+				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
+				chunk_map_data.insert(chunk_map_data.end(), map.begin() + row_start, map.begin() + row_start + Chunk::CHUNK_SIZE_X);
+			}
 
-	Chunks.push_back(chunk);
-
-	//for (int y = 0; y < chunk_size.y; ++y) {
-	//	for (int z = 0; z < chunk_size.z; ++z) {
-	//		for (int x = 0; x < chunk_size.x; ++x) {
-	//			glm::vec3 block_coord(x, y, z);
-
-	//			const double noise_value = map[z * chunk_size.x + x];
-	//			if (noise_value < 0.3) {
-	//				Blocks.push_back(
-	//					Block(BlockType::SAND, block_coord)
-	//				);
-	//			}
-	//			else if (noise_value >= 0.3 && noise_value <= 0.7) {
-	//				Blocks.push_back(
-	//					Block(BlockType::GRASS_BLOCK, block_coord)
-	//				);
-	//			}
-	//			else {
-	//				Blocks.push_back(
-	//					Block(BlockType::STONE, block_coord)
-	//				);
-	//			}
-	//		}
-	//	}
-	//}
+			chunk.GenerateMesh(chunk_map_data);
+			Chunks.push_back(chunk);
+		}
+	}
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{

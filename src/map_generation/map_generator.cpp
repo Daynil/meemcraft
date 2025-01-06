@@ -27,21 +27,21 @@ MapGenerator::~MapGenerator()
 	delete texture;
 }
 
-std::vector<double> MapGenerator::GenerateMap(int chunk_size, double frequency, unsigned int octaves, unsigned int seed)
+std::vector<double> MapGenerator::GenerateMap(int map_size, double frequency, unsigned int octaves, unsigned int seed)
 {
 	frequency = std::clamp(frequency, 0.1, 64.0);
 	octaves = std::clamp(octaves, 1u, 16u);
 
-	std::vector<double> noise_data(chunk_size * chunk_size);
+	std::vector<double> noise_data(map_size * map_size);
 
 	const siv::PerlinNoise perlin{ seed };
-	const double fx = (frequency / chunk_size); // aka width
-	const double fy = (frequency / chunk_size); // aka height
+	const double fx = (frequency / map_size); // aka width
+	const double fy = (frequency / map_size); // aka height
 
-	for (int y = 0; y < chunk_size; ++y) {
-		for (int x = 0; x < chunk_size; ++x) {
+	for (int y = 0; y < map_size; ++y) {
+		for (int x = 0; x < map_size; ++x) {
 			// RGB = 3 channels
-			int noise_index = (y * chunk_size + x);
+			int noise_index = (y * map_size + x);
 			// Noise is 0 - 1, convert to rgb up to 255
 			noise_data[noise_index] = perlin.octave2D_01((x * fx), (y * fy), octaves);
 		}
@@ -52,7 +52,7 @@ std::vector<double> MapGenerator::GenerateMap(int chunk_size, double frequency, 
 
 void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
 {
-	auto chunk_size = std::sqrt(noisemap.size());
+	auto map_dim_size = std::sqrt(noisemap.size());
 
 	// RGB = 3 channels
 	// We use unsigned char because each char is 8 bits, aka 1 byte
@@ -60,13 +60,13 @@ void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
 	// an rgb color value from 0 to 255.
 	// Bytes can store a value up to exactly 255, which is 11111111 in binary.
 	// Thus, unsigned chars are a natural choice for image data.
-	std::vector<unsigned char> texture_noise_data(chunk_size * chunk_size * 3);
+	std::vector<unsigned char> texture_noise_data(map_dim_size * map_dim_size * 3);
 
-	for (int y = 0; y < chunk_size; ++y) {
-		for (int x = 0; x < chunk_size; ++x) {
+	for (int y = 0; y < map_dim_size; y++) {
+		for (int x = 0; x < map_dim_size; x++) {
 			// RGB = 3 channels
-			int texture_index = (y * chunk_size + x) * 3;
-			const double noise_value = noisemap[y * chunk_size + x];
+			int texture_index = (y * map_dim_size + x) * 3;
+			const double noise_value = noisemap[y * map_dim_size + x];
 			// Noise is 0 - 1, convert to rgb up to 255
 			unsigned char noise_c = static_cast<unsigned char>(noise_value * 255);
 
@@ -76,7 +76,7 @@ void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
 		}
 	}
 
-	texture = new Texture(texture_noise_data.data(), chunk_size, chunk_size);
+	texture = new Texture(texture_noise_data.data(), map_dim_size, map_dim_size);
 }
 
 void MapGenerator::DrawNoisemap()

@@ -42,8 +42,6 @@ public:
 			// 1) Determine how many vertices we’ve already placed
 			unsigned int baseIndex = vertex_positions.size() / 3; // each vertex has 3 floats
 
-			//std::vector<unsigned int> indices = BlockVertices::mesh_indices_face(block_num);
-
 			// 2) Copy the 4 'left-face' vertices, adding (x, y, z)
 			for (int i = 0; i < 4; i++) {
 				float vx = BlockVertices::vertices_left[i * 3 + 0] + 0;
@@ -55,17 +53,11 @@ public:
 				vertex_positions.push_back(vz);
 			}
 
-			//vertex_positions.insert(
-			//	vertex_positions.end(),
-			//	BlockVertices::vertices_left.begin(),
-			//	BlockVertices::vertices_left.end()
-			//);
 			vertex_texture_coords.insert(
 				vertex_texture_coords.end(),
 				texture_coords.begin(),
 				texture_coords.end()
 			);
-			//vertex_indices.insert(vertex_indices.end(), indices.begin(), indices.end());
 
 			vertex_indices.push_back(baseIndex + 0);
 			vertex_indices.push_back(baseIndex + 1);
@@ -94,19 +86,54 @@ public:
 
 		int total_faces_rendered = 0;
 
+		float sea_level = 0.5f;
+		int sea_height = CHUNK_SIZE_Y / 2;
+		float mountains = 0.7f;
+
 		for (int x = 0; x < CHUNK_SIZE_X; x++) {
 			for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 				for (int z = 0; z < CHUNK_SIZE_Z; z++) {
 					const double noise_value = chunk_map[z * CHUNK_SIZE_X + x];
 
-					if (noise_value < 0.3) {
-						blocks[x][y][z] = BlockType::SAND;
+					// Above ground
+					if (noise_value >= sea_level) {
+						if (noise_value < mountains) {
+							if (noise_value <= sea_level + 0.1f) {
+								if (y <= sea_height) {
+									blocks[x][y][z] = BlockType::SAND;
+								}
+								else {
+									blocks[x][y][z] = BlockType::AIR;
+								}
+							}
+							else {
+								int hill_height = CHUNK_SIZE_Y * noise_value;
+								if (y <= hill_height) {
+									blocks[x][y][z] = BlockType::GRASS_BLOCK;
+								}
+								else {
+									blocks[x][y][z] = BlockType::AIR;
+								}
+							}
+						}
+						else {
+							int mountain_height = CHUNK_SIZE_Y * noise_value;
+							if (y <= mountain_height) {
+								blocks[x][y][z] = BlockType::STONE;
+							}
+							else {
+								blocks[x][y][z] = BlockType::AIR;
+							}
+						}
 					}
-					else if (noise_value >= 0.3 && noise_value <= 0.7) {
-						blocks[x][y][z] = BlockType::GRASS_BLOCK;
-					}
+					// Underground
 					else {
-						blocks[x][y][z] = BlockType::STONE;
+						if (y < sea_height) {
+							blocks[x][y][z] = BlockType::STONE;
+						}
+						else {
+							blocks[x][y][z] = BlockType::AIR;
+						}
 					}
 				}
 			}
@@ -237,7 +264,7 @@ public:
 							// 1) Determine how many vertices we’ve already placed
 							unsigned int baseIndex = vertex_positions.size() / 3; // each vertex has 3 floats
 
-							// 2) Copy the 4 'left-face' vertices, adding (x, y, z)
+							// 2) Copy the 4 face vertices, adding (x, y, z)
 							for (int i = 0; i < 4; i++) {
 								float vx = BlockVertices::vertices_face.at(face)[i * 3 + 0] + x;
 								float vy = BlockVertices::vertices_face.at(face)[i * 3 + 1] + y;

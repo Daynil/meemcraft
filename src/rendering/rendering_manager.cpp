@@ -24,7 +24,7 @@ void RenderingManager::Render()
 			}
 
 			// Per-entity functions
-			renderer->render(*block);
+			renderer->render_entity(*block);
 
 			// Functions shared by whole group
 			if (std::next(it) == blocks.end()) {
@@ -36,11 +36,11 @@ void RenderingManager::Render()
 	for (auto it = chunks.begin(); it != chunks.end(); ++it) {
 		auto chunk = *it;
 		if (it == chunks.begin()) {
-			renderer->prepare_entity(*chunk);
+			renderer->prepare_chunk(*chunk);
 		}
 
 		// Per-entity functions
-		renderer->render(*chunk);
+		renderer->render_chunk(*chunk);
 
 		// Functions shared by whole group
 		if (std::next(it) == chunks.end()) {
@@ -51,7 +51,7 @@ void RenderingManager::Render()
 
 	for (const auto& entity : entities) {
 		renderer->prepare_entity(*entity);
-		renderer->render(*entity);
+		renderer->render_entity(*entity);
 		renderer->cleanup_entity(*entity);
 	}
 

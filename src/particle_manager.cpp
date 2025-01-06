@@ -31,7 +31,7 @@ void ParticleManager::Render(Renderer& renderer)
 	for (auto& particle : particles)
 	{
 		if (particle.color.a > 0)
-			renderer.render(particle);
+			renderer.render_entity(particle);
 	}
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

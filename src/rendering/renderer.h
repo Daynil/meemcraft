@@ -19,8 +19,18 @@ public:
 	Renderer(Display* display) : display(display) {};
 
 	void init(Camera* camera);
+
+	void bind_vertex_data(Entity& entity);
+	void bind_texture(Entity& entity);
+
+	// Optimized for entities that share shader, texture, AND vertex data
 	void prepare_entity(Entity& entity);
 	void cleanup_entity(Entity& entity);
-	void render(Entity& entity);
+	void render_entity(Entity& entity);
+
+	// Chunks only share shader and texture
+	void prepare_chunk(Entity& entity);
+	void render_chunk(Entity& entity);
+
 	void prepare();
 };
