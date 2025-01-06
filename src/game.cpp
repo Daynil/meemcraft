@@ -67,35 +67,16 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	// Perfomance max (up to 100fps)
-	//int chunk_size = 16;
-
-	// Performance good, 30-40fps
-	//int chunk_size = 64;
-
-	// 10-15 fps?
-	//int chunk_size = 128;
-
-	// Barely runs, 1-5fps
-	//int chunk_size = 256;
-
-	// Basically freezes and doesn't even run 
-	//int chunk_size = 512;
-
-	// 1-5fps
-	//glm::vec3 map_size = glm::vec3(16, 256, 16);
-
 	// TODO:
 	//  chunk interiors still generating when not needed
 	//  view frustrum culling
-	//  memory leak?
 
 	// Some multiple of 2
-	int num_chunks = 16;
+	int num_chunks = 64;
 	int chunks_per_side = num_chunks / 2;
 	glm::vec3 map_size = glm::vec3(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_Y, Chunk::CHUNK_SIZE_Z * chunks_per_side);
 
-	auto map = map_generator->GenerateMap(map_size.x, 10.0, 8, 123456);
+	auto map = map_generator->GenerateMap(map_size.x, 123456);
 
 	if (State == DEBUG) {
 		map_generator->CreateNoisemapTexture(map);
@@ -139,7 +120,7 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			auto map = map_generator->GenerateMap(128, random_float(0.1, 64.0), random_int(1, 16), 123456);
+			auto map = map_generator->GenerateMap(128, random_int(0, 123456));
 			map_generator->CreateNoisemapTexture(map);
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;

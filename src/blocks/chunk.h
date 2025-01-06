@@ -85,34 +85,40 @@ public:
 
 		BlockType block = BlockType::AIR;
 
-		// Above ground
-		if (noise_value >= sea_level_start) {
-			int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
+		int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
 
-			if (noise_value < mountains) {
-				if (noise_value <= sea_level_end) {
-					if (y <= area_height) {
-						block = BlockType::SAND;
-					}
-				}
-				else {
-					if (y <= area_height) {
-						block = BlockType::GRASS_BLOCK;
-					}
-				}
-			}
-			else {
-				if (y <= area_height) {
-					block = BlockType::STONE;
-				}
-			}
+		if (y <= area_height) {
+			block = BlockType::GRASS_BLOCK;
 		}
-		// Underground
-		else {
-			if (y < sea_height) {
-				block = BlockType::STONE;
-			}
-		}
+
+		// Above ground
+		//if (noise_value >= sea_level_start) {
+		//	int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
+
+		//	if (noise_value < mountains) {
+		//		if (noise_value <= sea_level_end) {
+		//			if (y <= area_height) {
+		//				block = BlockType::SAND;
+		//			}
+		//		}
+		//		else {
+		//			if (y <= area_height) {
+		//				block = BlockType::GRASS_BLOCK;
+		//			}
+		//		}
+		//	}
+		//	else {
+		//		if (y <= area_height) {
+		//			block = BlockType::STONE;
+		//		}
+		//	}
+		//}
+		//// Underground
+		//else {
+		//	if (y < sea_height) {
+		//		block = BlockType::STONE;
+		//	}
+		//}
 
 		return block;
 	};
