@@ -91,7 +91,7 @@ void Game::LoadLevel()
 	//  memory leak?
 
 	// Some multiple of 2
-	int num_chunks = 8;
+	int num_chunks = 16;
 	int chunks_per_side = num_chunks / 2;
 	glm::vec3 map_size = glm::vec3(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_Y, Chunk::CHUNK_SIZE_Z * chunks_per_side);
 

@@ -56,6 +56,7 @@ void RenderingManager::Render()
 	}
 
 	block_groups.clear();
+	chunks.clear();
 	entities.clear();
 }
 
