@@ -48,7 +48,7 @@ std::vector<double> MapGenerator::GenerateMap(int map_size, unsigned int seed)
 				0.06f * (perlin.noise2D(16 * nx, 16 * ny) / 2 + 0.5) +
 				0.03f * (perlin.noise2D(32 * nx, 32 * ny) / 2 + 0.5));
 			e = e / (1.0f + 0.5f + 0.25f + 0.13f + 0.06f + 0.03f);
-			e = std::pow(e, 5.0f);
+			e = std::pow(e, 10.0f);
 
 			noise_data[noise_index] = e;
 			//noise_data[noise_index] = perlin.octave2D_01((x * nx), (y * ny), octaves);

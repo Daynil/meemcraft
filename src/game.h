@@ -37,6 +37,16 @@ struct Collision {
 	glm::vec2 diff;
 };
 
+struct Vec2Comparator {
+	bool operator()(const glm::vec2& a, const glm::vec2& b) const {
+		if (a.x != b.x) {
+			return a.x < b.x;
+		}
+		return a.y < b.y;
+	}
+};
+
+
 class Game
 {
 public:
@@ -48,7 +58,12 @@ public:
 	RenderingManager* rendering_manager;
 
 	std::vector<Block> Blocks;
-	std::vector<Chunk> Chunks;
+
+	// TODO: make 2d vector of chunks by world addresses
+	// so we can look up adjacent chunks and not render adjacent chunk faces
+	// and later, so we can add new chunks as user moves
+	// Create a chunk manager that allows chunks to query adjacent chunk faces
+	std::map<glm::vec2, Chunk, Vec2Comparator> Chunks;
 
 	//Player* player;
 	Camera* camera;

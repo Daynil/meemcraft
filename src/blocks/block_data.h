@@ -64,6 +64,13 @@ struct BlockData {
 	int bottom_texture_num;
 };
 
+// Run-time data about a block
+struct BlockInfo {
+	BlockType type;
+
+	int health;
+};
+
 namespace BlockVertices
 {
 	enum BlockFace {

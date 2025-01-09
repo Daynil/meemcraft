@@ -72,7 +72,7 @@ void Game::LoadLevel()
 	//  view frustrum culling
 
 	// Some multiple of 2
-	int num_chunks = 64;
+	int num_chunks = 16;
 	int chunks_per_side = num_chunks / 2;
 	glm::vec3 map_size = glm::vec3(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_Y, Chunk::CHUNK_SIZE_Z * chunks_per_side);
 
@@ -101,7 +101,8 @@ void Game::LoadLevel()
 			}
 
 			chunk.GenerateMesh(chunk_map_data);
-			Chunks.push_back(chunk);
+			Chunks.emplace(glm::vec2(cx, cz), chunk);
+			//Chunks.push_back(chunk);
 		}
 	}
 
@@ -192,9 +193,9 @@ void Game::Render()
 		rendering_manager->ProcessBlock(&block);
 	}
 
-	for (auto& chunk : Chunks)
+	for (auto& p_chunk : Chunks)
 	{
-		rendering_manager->ProcessChunk(&chunk);
+		rendering_manager->ProcessChunk(&p_chunk.second);
 	}
 
 	if (State == DEBUG) {
