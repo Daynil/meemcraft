@@ -69,9 +69,9 @@ void Game::LoadLevel()
 	Blocks.clear();
 
 	// Note: map size must correspond to chunk size x (16) times chunks per side
-	//auto map = map_generator->GenerateMap(65536, 123456);
-	chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
-	//chunk_manager->noise_map = map_generator->GenerateMap(64, 123456);
+	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
+	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
+	chunk_manager->noise_map = map_generator->GenerateMap(128, 123457);
 
 	if (State == DEBUG) {
 		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);

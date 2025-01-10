@@ -11,7 +11,8 @@ public:
 
 	float FOV = 45.0f;
 	float NEAR_PLANE = 0.1f;
-	float FAR_PLANE = 100.0f;
+	// View distance - decrease for performance
+	float FAR_PLANE = 1000.0f;
 
 	float speed = 50.0f;
 	float dead_zone = 0.1f;
