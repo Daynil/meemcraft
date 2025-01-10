@@ -46,6 +46,7 @@ void Game::Init()
 	rendering_manager->Init(camera);
 
 	map_generator = new MapGenerator(rendering_manager);
+	chunk_manager = new ChunkManager();
 
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),
@@ -67,44 +68,17 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
-	// TODO:
-	//  chunk interiors still generating when not needed
-	//  view frustrum culling
-
-	// Some multiple of 2
-	int num_chunks = 16;
-	int chunks_per_side = num_chunks / 2;
-	glm::vec3 map_size = glm::vec3(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_Y, Chunk::CHUNK_SIZE_Z * chunks_per_side);
-
-	auto map = map_generator->GenerateMap(map_size.x, 123456);
+	// Note: map size must correspond to chunk size x (16) times chunks per side
+	//auto map = map_generator->GenerateMap(65536, 123456);
+	chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
+	//chunk_manager->noise_map = map_generator->GenerateMap(64, 123456);
 
 	if (State == DEBUG) {
-		map_generator->CreateNoisemapTexture(map);
+		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-
-	for (int cz = 0; cz < chunks_per_side; cz++) {
-		for (int cx = 0; cx < chunks_per_side; cx++) {
-			Chunk chunk(glm::vec3(
-				(cx * Chunk::CHUNK_SIZE_X),
-				// Shift sea level to y = 0
-				-(Chunk::CHUNK_SIZE_Y / 2),
-				(cz * Chunk::CHUNK_SIZE_Z))
-			);
-
-			std::vector<double> chunk_map_data;
-			chunk_map_data.reserve(Chunk::CHUNK_SIZE_Z * Chunk::CHUNK_SIZE_Z);
-			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
-				chunk_map_data.insert(chunk_map_data.end(), map.begin() + row_start, map.begin() + row_start + Chunk::CHUNK_SIZE_X);
-			}
-
-			chunk.GenerateMesh(chunk_map_data);
-			Chunks.emplace(glm::vec2(cx, cz), chunk);
-			//Chunks.push_back(chunk);
-		}
-	}
+	chunk_manager->LoadChunks();
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{
@@ -193,9 +167,9 @@ void Game::Render()
 		rendering_manager->ProcessBlock(&block);
 	}
 
-	for (auto& p_chunk : Chunks)
+	for (auto& p_chunk : chunk_manager->chunks)
 	{
-		rendering_manager->ProcessChunk(&p_chunk.second);
+		rendering_manager->ProcessChunk(p_chunk.second);
 	}
 
 	if (State == DEBUG) {
@@ -252,4 +226,5 @@ Game::~Game()
 	delete text_renderer;
 	delete map_generator;
 	delete rendering_manager;
+	delete chunk_manager;
 }
