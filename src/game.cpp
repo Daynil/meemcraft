@@ -66,6 +66,16 @@ void Game::ResetGame()
 
 void Game::LoadLevel()
 {
+	// We actually initialize all of our threads here, and it is at this point they 
+	// have already started working. All of them immediately start working as soon as
+	// each loop completes.
+	// Detach makes these all threads separate from the main thread so they don't block.
+	for (int i = 0; i < 5; i++)
+	{
+		//std::thread(chunk_manager->ChunkWorker, glm::vec2(1, 1)).detach();
+		chunk_manager->QueueChunk(glm::vec2(i, i));
+	}
+
 	Blocks.clear();
 
 	// Note: map size must correspond to chunk size x (16) times chunks per side
@@ -78,7 +88,7 @@ void Game::LoadLevel()
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-	chunk_manager->LoadChunks();
+	//chunk_manager->LoadChunks();
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{
@@ -152,6 +162,8 @@ void Game::ProcessInput(float dt)
 
 void Game::Update(float dt)
 {
+	//ProcessChunks();
+	chunk_manager->ProcessChunks();
 	fps = fps_counter.Update();
 	//CheckCollisions();
 	//particle_manager->Update(dt);

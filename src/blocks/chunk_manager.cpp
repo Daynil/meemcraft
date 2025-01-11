@@ -1,5 +1,57 @@
 #include "chunk_manager.h"
 
+#include <iostream>
+
+
+std::string ChunkManager::LoadChunk(glm::vec2 world_coord)
+{
+	// Simulate CPU-intensive work
+	std::this_thread::sleep_for(std::chrono::seconds((int)world_coord.x));
+	return "Chunk_" + std::to_string(world_coord.x);
+}
+
+void ChunkManager::ChunkWorker(glm::vec2 world_coord)
+{
+	// Immediately calls LoadChunk, and work starts right here.
+	auto result = LoadChunk(world_coord);
+	{
+		// We want to push to the queue from a thread, so we lock it.
+		std::lock_guard<std::mutex> lock(queue_mutex);
+		// Push the completed chunk to our queue for ProcessChunks to handle.
+		chunk_queue.push(result);
+	}
+}
+
+void ChunkManager::QueueChunk(glm::vec2 world_coord)
+{
+	std::thread(&ChunkManager::ChunkWorker, this, world_coord).detach();
+}
+
+
+void ChunkManager::ProcessChunks()
+{
+	// Briefly lock the queue to check if we have any new chunks completed.
+	std::unique_lock<std::mutex> lock(queue_mutex);
+
+	std::vector<std::string> completed_chunks;
+	while (!chunk_queue.empty())
+	{
+		// If we have one, grab it.
+		// Use move to avoid copying chunks, just taking ownership of them.
+		completed_chunks.push_back(std::move(chunk_queue.front()));
+		// Since we've handled it, we can remove this chunk from the queue.
+		chunk_queue.pop();
+	}
+
+	// Now that we have all our completed chunks, unlock the queue to avoid 
+	// holding it up while we use the chunks.
+	lock.unlock();
+
+	for (auto& chunk : completed_chunks) {
+		std::cout << "Processed " << chunk << std::endl;
+	}
+}
+
 void ChunkManager::LoadChunks()
 {
 	// TODO:
