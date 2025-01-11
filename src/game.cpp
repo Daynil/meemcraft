@@ -70,11 +70,11 @@ void Game::LoadLevel()
 	// have already started working. All of them immediately start working as soon as
 	// each loop completes.
 	// Detach makes these all threads separate from the main thread so they don't block.
-	for (int i = 0; i < 5; i++)
-	{
-		//std::thread(chunk_manager->ChunkWorker, glm::vec2(1, 1)).detach();
-		chunk_manager->QueueChunk(glm::vec2(i, i));
-	}
+	//for (int i = 0; i < 5; i++)
+	//{
+	//	//std::thread(chunk_manager->ChunkWorker, glm::vec2(1, 1)).detach();
+	//	chunk_manager->QueueChunk(glm::vec2(i, i));
+	//}
 
 	Blocks.clear();
 
@@ -88,7 +88,7 @@ void Game::LoadLevel()
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-	//chunk_manager->LoadChunks();
+	chunk_manager->LoadChunks();
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{

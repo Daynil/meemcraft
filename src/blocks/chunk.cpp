@@ -1,7 +1,8 @@
 #include "chunk.h"
 
-Chunk::Chunk(glm::vec3 p_position, std::vector<double>* chunk_map_data)
+Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<double>* chunk_map_data)
 {
+	id = p_id;
 	position = p_position;
 	GenerateBlocks(chunk_map_data);
 }
@@ -319,7 +320,7 @@ void Chunk::GenerateMesh()
 		}
 	}
 
-	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices);
+	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices, true);
 	rotation = glm::vec3(0);
 	scale = glm::vec3(1);
 	texture = &ResourceManager::GetTexture("block_atlas");

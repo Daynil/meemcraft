@@ -2,13 +2,20 @@
 
 #include <glad/glad.h>
 
-RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int>& vertex_indices) : vertex_positions(vertex_positions), vertex_texture_uvs(vertex_texture_uvs), vertex_indices(vertex_indices)
+RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int>& vertex_indices, bool defer_load) : vertex_positions(vertex_positions), vertex_texture_uvs(vertex_texture_uvs), vertex_indices(vertex_indices)
+{
+	vertex_count = vertex_indices.size();
+	if (!defer_load)
+		LoadToGPU();
+}
+
+void RawModel::LoadToGPU()
 {
 	// Create VAO to store our data in
-	// VAO = vertex array objects (stores configuration of the attributes)
-	// The VAO is the top-level storage container
-	// It stores references to the other information - buffer objects of our vertex positions, textures, indices, etc.
-	// Using the VAO ID, we can pull up all the other info (which we do in our renderer).
+// VAO = vertex array objects (stores configuration of the attributes)
+// The VAO is the top-level storage container
+// It stores references to the other information - buffer objects of our vertex positions, textures, indices, etc.
+// Using the VAO ID, we can pull up all the other info (which we do in our renderer).
 	glGenVertexArrays(1, &VAO_ID);
 	glBindVertexArray(VAO_ID);
 
@@ -39,8 +46,6 @@ RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector
 	// Unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-
-	vertex_count = vertex_indices.size();
 }
 
 void RawModel::Delete()

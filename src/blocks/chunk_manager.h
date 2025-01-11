@@ -14,7 +14,7 @@
 #include "shared.h"
 
 struct Vec2Comparator {
-	bool operator()(const glm::vec2& a, const glm::vec2& b) const {
+	bool operator()(const ChunkID& a, const ChunkID& b) const {
 		if (a.x != b.x) {
 			return a.x < b.x;
 		}
@@ -22,33 +22,33 @@ struct Vec2Comparator {
 	}
 };
 
-
 class ChunkManager
 {
 public:
 	std::vector<double> noise_map;
-	std::map<glm::vec2, Chunk*, Vec2Comparator> chunks;
+	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
-	std::queue<std::string> chunk_queue;
-	//std::queue<Chunk> chunk_queue;
+	std::queue<Chunk*> chunk_queue;
 	std::mutex queue_mutex;
 
 	ChunkManager() {};
 
-	// Load a chunk - determine block types by noise_map, which faces
-	// to render, and load geometry.
-	std::string LoadChunk(glm::vec2 world_coord);
-	//Chunk LoadChunk(glm::vec2 world_coord);
-
-	// Process a chunk in a thread and push result to queue.
-	void ChunkWorker(glm::vec2 world_coord);
-	// Put a chunk into queue to be processed in a thread.
-	void QueueChunk(glm::vec2 world_coord);
 	// Thread coordinating loop - loads data in from the workers via queue
 	// when available.
 	void ProcessChunks();
 
+	// Put a chunk into queue to be processed in a thread.
+	void QueueChunk(Chunk* chunk);
+
 	void LoadChunks();
 
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(glm::vec2 world_coord);
+	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check);
+
+private:
+	// Load a chunk - determine block types by noise_map, which faces
+	// to render, and load geometry.
+	Chunk* LoadChunk(Chunk* chunk);
+
+	// Process a chunk in a thread and push result to queue.
+	void ChunkWorker(Chunk* chunk);
 };
