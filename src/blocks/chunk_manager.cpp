@@ -79,12 +79,6 @@ void ChunkManager::LoadChunks()
 		for (int cz = 0; cz < chunks_per_side; cz++) {
 			ChunkID chunk_id = glm::vec2(cx, cz);
 
-			//if (chunks.contains(chunk_id)) {
-			//	// TODO: eventually load chunk vertices into GPU here
-			//	// AKA chunk.load()
-			//	continue;
-			//}
-
 			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
 				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
 
@@ -114,9 +108,11 @@ void ChunkManager::LoadChunks()
 	}
 
 	// Only load meshes after all chunk block info has been generated for all chunks
-	// so we can reference adjacent chunk block types
+	// so we can reference adjacent chunk block types.
 	for (auto& p_chunk : chunks_pending) {
 		auto chunk = p_chunk.second;
+		// TODO: eventually we should combine all chunks and these pending ones
+		// so we can have access to ones already loaded too.
 		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_pending);
 		QueueChunk(chunk);
 	}
