@@ -7,6 +7,7 @@
 #include <mutex>
 
 #include <glm/glm.hpp>
+#include "thread_pool.hpp"
 
 #include "block_data.h"
 #include "block.h"
@@ -31,7 +32,9 @@ public:
 	std::queue<Chunk*> chunk_queue;
 	std::mutex queue_mutex;
 
-	ChunkManager() {};
+	ThreadPool pool;
+
+	ChunkManager();
 
 	// Thread coordinating loop - loads data in from the workers via queue
 	// when available.
@@ -48,7 +51,4 @@ private:
 	// Load a chunk - determine block types by noise_map, which faces
 	// to render, and load geometry.
 	Chunk* LoadChunk(Chunk* chunk);
-
-	// Process a chunk in a thread and push result to queue.
-	void ChunkWorker(Chunk* chunk);
 };

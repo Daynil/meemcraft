@@ -2,34 +2,36 @@
 
 #include <iostream>
 
+// Maximize thread usage without using every single thread to avoid OS lock
+unsigned int GetOptimalThreadCount() {
+	unsigned int max_threads = std::thread::hardware_concurrency();
+	// Ensure at least 1 thread is returned in case hardware_concurrency() is 0
+	return (max_threads > 1) ? max_threads - 1 : 1;
+}
+
+ChunkManager::ChunkManager() : pool(GetOptimalThreadCount()) {}
 
 Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 {
-	// Simulate CPU-intensive work
-	//std::this_thread::sleep_for(std::chrono::seconds((int)world_coord.x));
-	//return "Chunk_" + std::to_string(world_coord.x);
 	chunk->GenerateMesh();
 	chunk->should_render = true;
 	return chunk;
 }
 
-void ChunkManager::ChunkWorker(Chunk* chunk)
-{
-	// Immediately calls LoadChunk, and work starts right here.
-	auto result = LoadChunk(chunk);
-	{
-		// We want to push to the queue from a thread, so we lock it.
-		std::lock_guard<std::mutex> lock(queue_mutex);
-		// Push the completed chunk to our queue for ProcessChunks to handle.
-		chunk_queue.push(result);
-	}
-}
-
 void ChunkManager::QueueChunk(Chunk* chunk)
 {
-	std::thread(&ChunkManager::ChunkWorker, this, chunk).detach();
+	pool.enqueue([this, chunk]() {
+		// Immediately calls LoadChunk, and work starts right here.
+		// But, doesn't block main thread since we 
+		auto result = LoadChunk(chunk);
+		{
+			// We want to push to the queue from a thread, so we lock it.
+			std::lock_guard<std::mutex> lock(queue_mutex);
+			// Push the completed chunk to our queue for ProcessChunks to handle.
+			chunk_queue.push(result);
+		}
+	});
 }
-
 
 void ChunkManager::ProcessChunks()
 {
