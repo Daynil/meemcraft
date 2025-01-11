@@ -32,9 +32,9 @@ public:
 	std::queue<Chunk*> chunk_queue;
 	std::mutex queue_mutex;
 
-	ThreadPool pool;
+	ThreadPool* thread_pool;
 
-	ChunkManager();
+	ChunkManager(ThreadPool* thread_pool) : thread_pool(thread_pool) {};
 
 	// Thread coordinating loop - loads data in from the workers via queue
 	// when available.

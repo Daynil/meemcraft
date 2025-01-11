@@ -2,15 +2,6 @@
 
 #include <iostream>
 
-// Maximize thread usage without using every single thread to avoid OS lock
-unsigned int GetOptimalThreadCount() {
-	unsigned int max_threads = std::thread::hardware_concurrency();
-	// Ensure at least 1 thread is returned in case hardware_concurrency() is 0
-	return (max_threads > 1) ? max_threads - 1 : 1;
-}
-
-ChunkManager::ChunkManager() : pool(GetOptimalThreadCount()) {}
-
 Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 {
 	chunk->GenerateMesh();
@@ -20,7 +11,7 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 
 void ChunkManager::QueueChunk(Chunk* chunk)
 {
-	pool.enqueue([this, chunk]() {
+	thread_pool->enqueue([this, chunk]() {
 		// Immediately calls LoadChunk, and work starts right here.
 		// But, doesn't block main thread since we 
 		auto result = LoadChunk(chunk);

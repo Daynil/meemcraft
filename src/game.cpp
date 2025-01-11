@@ -18,7 +18,6 @@
 #include "map_generation/map_generator.h"
 #include "rendering/rendering_manager.h"
 
-
 void Game::Init()
 {
 	BlockLoader block_loader;
@@ -46,7 +45,7 @@ void Game::Init()
 	rendering_manager->Init(camera);
 
 	map_generator = new MapGenerator(rendering_manager);
-	chunk_manager = new ChunkManager();
+	chunk_manager = new ChunkManager(&thread_pool);
 
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),
@@ -230,6 +229,10 @@ Collision Game::CheckCollision(Entity& one, Entity& two)
 }
 
 
+
+Game::Game(int levelWidth, int levelHeight, Renderer* renderer) : LevelWidth(levelWidth), LevelHeight(levelHeight), renderer(renderer), thread_pool(GetOptimalThreadCount())
+{
+}
 
 Game::~Game()
 {

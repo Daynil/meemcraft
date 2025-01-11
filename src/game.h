@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "thread_pool.hpp"
+
 #include "rendering/texture.h"
 #include "entity.h"
 #include "rendering/shader.h"
@@ -55,6 +57,8 @@ public:
 	Camera* camera;
 	MapGenerator* map_generator;
 
+	ThreadPool thread_pool;
+
 	ParticleManager* particle_manager;
 	ChunkManager* chunk_manager;
 
@@ -86,7 +90,7 @@ public:
 	FPSCounter fps_counter;
 	float fps = 0;
 
-	Game(int levelWidth, int levelHeight, Renderer* renderer) : LevelWidth(levelWidth), LevelHeight(levelHeight), renderer(renderer) {};
+	Game(int levelWidth, int levelHeight, Renderer* renderer);
 	~Game();
 
 	void Init();
