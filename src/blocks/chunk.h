@@ -31,6 +31,7 @@ public:
 
 	~Chunk() {
 		delete model;
+		adjacent_chunks.clear();
 	};
 
 	void ChunkTest();

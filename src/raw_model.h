@@ -13,6 +13,7 @@ public:
 
 	RawModel() {};
 	RawModel(const std::vector<float>& vertex_positions, const std::vector<float>& vertex_texture_uvs, const std::vector<unsigned int >& vertex_indices, bool defer_load = false);
+	~RawModel();
 
 	void LoadToGPU();
 

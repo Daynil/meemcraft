@@ -67,10 +67,12 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
+	int view_distance = 10;
+	int chunks_per_side = view_distance * 2 + 1;
 	// Note: map size must correspond to chunk size x (16) times chunks per side
 	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
 	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
-	chunk_manager->noise_map = map_generator->GenerateMap(128, 123457);
+	chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, 123457);
 
 	if (State == DEBUG) {
 		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
@@ -94,8 +96,15 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
+			int view_distance = 10;
+			int chunks_per_side = view_distance * 2 + 1;
+
 			chunk_manager->ClearChunks();
-			chunk_manager->noise_map = map_generator->GenerateMap(128, random_int(0, 123456));
+
+			Timer timer("noise map gen");
+			chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, random_int(0, 123456));
+			timer.Stop();
+
 			map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
 			chunk_manager->LoadChunks();
 

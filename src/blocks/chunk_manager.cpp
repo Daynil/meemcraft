@@ -54,17 +54,9 @@ void ChunkManager::ProcessChunks()
 void ChunkManager::LoadChunks()
 {
 	// TODO:
-		// make 2d vector of chunks by world addresses
-		// 	// so we can look up adjacent chunks and not render adjacent chunk faces
-		// // and later, so we can add new chunks as user moves
-		// // Create a chunk manager that allows chunks to query adjacent chunk faces
-		//  chunk interiors still generating when not needed
-		//  view frustrum culling
-
-		// Before adjacent chunk logic, 
-		// 8 chunks per side took 369mb of memory
-	// Down to 227mb after adjacent chunk logic!
-	int chunks_per_side = 8;
+	// View frustrum culling
+	int view_distance = 10;
+	int chunks_per_side = view_distance * 2 + 1;
 	glm::vec3 map_size = glm::vec3(
 		Chunk::CHUNK_SIZE_X * chunks_per_side,
 		Chunk::CHUNK_SIZE_Y,

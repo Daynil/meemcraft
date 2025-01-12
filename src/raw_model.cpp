@@ -9,6 +9,11 @@ RawModel::RawModel(const std::vector<float>& vertex_positions, const std::vector
 		LoadToGPU();
 }
 
+RawModel::~RawModel()
+{
+	Delete();
+}
+
 void RawModel::LoadToGPU()
 {
 	// Create VAO to store our data in
