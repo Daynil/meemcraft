@@ -143,7 +143,7 @@ void Chunk::GenerateMesh()
 	Chunk* front_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::FRONT);
 	Chunk* back_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::BACK);
 
-	Timer timer("Chunk mesh");
+	//Timer timer("Chunk mesh");
 
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
@@ -324,12 +324,11 @@ void Chunk::GenerateMesh()
 			}
 		}
 	}
-	timer.Stop();
+	//timer.Stop();
 
 	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices, true);
 	rotation = glm::vec3(0);
 	scale = glm::vec3(1);
 	texture = &ResourceManager::GetTexture("block_atlas");
 	shader = &ResourceManager::GetShader("entity");
-
 };

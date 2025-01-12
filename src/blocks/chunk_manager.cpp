@@ -125,6 +125,9 @@ void ChunkManager::LoadChunks()
 
 void ChunkManager::ClearChunks()
 {
+	for (auto& p_chunk : chunks) {
+		delete p_chunk.second;
+	}
 	noise_map.clear();
 	chunks.clear();
 }
