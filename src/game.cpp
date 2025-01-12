@@ -79,7 +79,7 @@ void Game::LoadLevel()
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-	chunk_manager->LoadChunks();
+	chunk_manager->QueueChunks();
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{
@@ -109,7 +109,7 @@ void Game::ProcessInput(float dt)
 			map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
 			timer.Stop();
 
-			chunk_manager->LoadChunks();
+			chunk_manager->QueueChunks();
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}
@@ -165,6 +165,7 @@ void Game::ProcessInput(float dt)
 
 void Game::Update(float dt)
 {
+	chunk_manager->LoadChunks();
 	chunk_manager->ProcessChunks();
 	chunk_manager->UploadCompletedChunks();
 	fps = fps_counter.Update();

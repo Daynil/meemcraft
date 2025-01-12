@@ -12,19 +12,19 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 
 void ChunkManager::UploadCompletedChunks()
 {
-	const int max_upload_per_frame = 5;
+	const int max_upload_per_frame = 20;
 
-	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_pending_gpu_upload.size());
+	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
 
 	for (int i = 0; i < num_to_upload; i++) {
-		Chunk* chunk = chunks_pending_gpu_upload[i];
+		Chunk* chunk = chunks_gpu_queue[i];
 		chunk->model->LoadToGPU();
 		chunks.emplace(chunk->id, chunk);
 	}
 
-	chunks_pending_gpu_upload.erase(
-		chunks_pending_gpu_upload.begin(),
-		chunks_pending_gpu_upload.begin() + num_to_upload
+	chunks_gpu_queue.erase(
+		chunks_gpu_queue.begin(),
+		chunks_gpu_queue.begin() + num_to_upload
 	);
 }
 
@@ -62,18 +62,15 @@ void ChunkManager::ProcessChunks()
 	// holding it up while we use the chunks.
 	lock.unlock();
 
-	//std::cout << "completed chunks: " + std::to_string(completed_chunks.size()) << std::endl;
-
 	for (auto chunk : completed_chunks) {
-		//std::cout << "Processed " << chunk << std::endl;
-		//chunk->model->LoadToGPU();
-		chunks_pending_gpu_upload.push_back(chunk);
+		chunks_gpu_queue.push_back(chunk);
 	}
 }
 
-void ChunkManager::LoadChunks()
+void ChunkManager::QueueChunks()
 {
 	// TODO:
+	// Make this async
 	// View frustrum culling
 	int view_distance = 10;
 	int chunks_per_side = view_distance * 2 + 1;
@@ -87,8 +84,6 @@ void ChunkManager::LoadChunks()
 	chunk_map_data.reserve(Chunk::CHUNK_SIZE_X * Chunk::CHUNK_SIZE_Z);
 
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_pending;
-
-	Timer timer("Initial chunk data");
 
 	for (int cx = 0; cx < chunks_per_side; cx++) {
 		for (int cz = 0; cz < chunks_per_side; cz++) {
@@ -122,10 +117,6 @@ void ChunkManager::LoadChunks()
 		}
 	}
 
-	timer.Stop();
-
-	timer.Reset("adjacent chunks");
-
 	// Only load meshes after all chunk block info has been generated for all chunks
 	// so we can reference adjacent chunk block types.
 	for (auto& p_chunk : chunks_pending) {
@@ -133,14 +124,24 @@ void ChunkManager::LoadChunks()
 		// TODO: eventually we should combine all chunks and these pending ones
 		// so we can have access to ones already loaded too.
 		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_pending);
+		chunks_cpu_queue.push_back(chunk);
+	}
+}
+
+void ChunkManager::LoadChunks()
+{
+	const int max_load_per_frame = 3;
+
+	int num_to_load = std::min(max_load_per_frame, (int)chunks_cpu_queue.size());
+
+	for (int i = 0; i < num_to_load; i++) {
+		QueueChunk(chunks_cpu_queue[i]);
 	}
 
-	timer.Stop();
-
-	for (auto& p_chunk : chunks_pending) {
-		auto chunk = p_chunk.second;
-		QueueChunk(chunk);
-	}
+	chunks_cpu_queue.erase(
+		chunks_cpu_queue.begin(),
+		chunks_cpu_queue.begin() + num_to_load
+	);
 }
 
 void ChunkManager::ClearChunks()

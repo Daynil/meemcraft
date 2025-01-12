@@ -30,8 +30,8 @@ public:
 	std::vector<double> noise_map;
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
-	std::vector<Chunk*> chunks_pending_gpu_upload;
-
+	std::vector<Chunk*> chunks_gpu_queue;
+	std::vector<Chunk*> chunks_cpu_queue;
 
 	std::queue<Chunk*> chunk_queue;
 	std::mutex queue_mutex;
@@ -45,12 +45,15 @@ public:
 	void ProcessChunks();
 
 	// Chunks that completed in rapid sequence take turns
-	// uploading to gpu
+	// uploading to gpu per frame
 	void UploadCompletedChunks();
 
 	// Put a chunk into queue to be processed in a thread.
 	void QueueChunk(Chunk* chunk);
 
+	// Throttle chunk queue to avoid swamping thread pool
+	void QueueChunks();
+	// Chunks that are ready to process on CPU take turns
 	void LoadChunks();
 
 	// For debugging (regenerate map)
