@@ -17,7 +17,7 @@ public:
 	static std::map<std::string, RawModel> RawModels;
 	static std::map<std::string, Texture> Textures;
 	static std::map<std::string, Sound> Sounds;
-	static std::map<BlockType, BlockData> BlockDataMap;
+	static BlockData BlockDataMap[(int)BlockType::BLOCK_COUNT];
 
 	static float texture_atlas_x_unit;
 

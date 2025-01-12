@@ -1,5 +1,9 @@
 #include "chunk.h"
 
+#include <iostream>
+
+#include "util.h"
+
 Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<double>* chunk_map_data)
 {
 	id = p_id;
@@ -50,8 +54,6 @@ void Chunk::ChunkTest()
 		vertex_indices.push_back(baseIndex + 1);
 		vertex_indices.push_back(baseIndex + 2);
 	}
-
-
 
 	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices);
 	rotation = glm::vec3(0);
@@ -136,12 +138,19 @@ void Chunk::GenerateMesh()
 
 	int total_faces_rendered = 0;
 
+	Chunk* left_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::LEFT);
+	Chunk* right_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::RIGHT);
+	Chunk* front_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::FRONT);
+	Chunk* back_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::BACK);
+
+	Timer timer("Chunk mesh");
+
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
 				BlockInfo block_info = blocks[x][y][z];
 				BlockType block = block_info.type;
-				BlockData block_data = ResourceManager::GetBlockData(block);
+				BlockData& block_data = ResourceManager::GetBlockData(block);
 
 				// Skip all rendering of air blocks
 				if (block == BlockType::AIR || block_info.health <= 0) {
@@ -173,7 +182,6 @@ void Chunk::GenerateMesh()
 						// Note: edge of the map will never be visible
 						// so we never render map-edge faces
 						else {
-							auto left_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::LEFT);
 							if (left_chunk) {
 								auto left_chunk_adjacent_block = left_chunk->blocks[CHUNK_SIZE_X - 1][y][z].type;
 
@@ -193,7 +201,6 @@ void Chunk::GenerateMesh()
 							}
 						}
 						else {
-							auto right_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::RIGHT);
 							if (right_chunk) {
 								auto right_chunk_adjacent_block = right_chunk->blocks[0][y][z].type;
 
@@ -215,7 +222,6 @@ void Chunk::GenerateMesh()
 						}
 						// Logic for front faces of blocks at front-most edge of chunk
 						else {
-							auto front_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::FRONT);
 							if (front_chunk) {
 								auto front_chunk_adjacent_block = front_chunk->blocks[x][y][0].type;
 
@@ -235,7 +241,6 @@ void Chunk::GenerateMesh()
 							}
 						}
 						else {
-							auto back_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::BACK);
 							if (back_chunk) {
 								auto back_chunk_adjacent_block = back_chunk->blocks[x][y][CHUNK_SIZE_Z - 1].type;
 
@@ -319,10 +324,12 @@ void Chunk::GenerateMesh()
 			}
 		}
 	}
+	timer.Stop();
 
 	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices, true);
 	rotation = glm::vec3(0);
 	scale = glm::vec3(1);
 	texture = &ResourceManager::GetTexture("block_atlas");
 	shader = &ResourceManager::GetShader("entity");
+
 };

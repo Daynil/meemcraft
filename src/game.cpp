@@ -67,17 +67,24 @@ void Game::LoadLevel()
 {
 	Blocks.clear();
 
+	Timer timer("Noisemap");
+
 	// Note: map size must correspond to chunk size x (16) times chunks per side
 	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
 	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
 	chunk_manager->noise_map = map_generator->GenerateMap(128, 123457);
+	timer.Stop();
 
 	if (State == DEBUG) {
+		timer.Reset("Noisemap texture");
 		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
+		timer.Stop();
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+	timer.Reset("LoadChunks");
 	chunk_manager->LoadChunks();
+	timer.Stop();
 
 	//for (int i = 0; i < chunk_size; i++)
 	//{
@@ -94,8 +101,10 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			auto map = map_generator->GenerateMap(128, random_int(0, 123456));
-			map_generator->CreateNoisemapTexture(map);
+			chunk_manager->ClearChunks();
+			chunk_manager->noise_map = map_generator->GenerateMap(128, random_int(0, 123456));
+			map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
+			chunk_manager->LoadChunks();
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}

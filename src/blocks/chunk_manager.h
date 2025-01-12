@@ -13,6 +13,7 @@
 #include "block.h"
 #include "chunk.h"
 #include "shared.h"
+#include "util.h"
 
 struct Vec2Comparator {
 	bool operator()(const ChunkID& a, const ChunkID& b) const {
@@ -44,6 +45,9 @@ public:
 	void QueueChunk(Chunk* chunk);
 
 	void LoadChunks();
+
+	// For debugging (regenerate map)
+	void ClearChunks();
 
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check);
 

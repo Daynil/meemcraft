@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+
 Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 {
 	chunk->GenerateMesh();
@@ -75,6 +76,8 @@ void ChunkManager::LoadChunks()
 
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_pending;
 
+	Timer timer("Initial chunk data");
+
 	for (int cx = 0; cx < chunks_per_side; cx++) {
 		for (int cz = 0; cz < chunks_per_side; cz++) {
 			ChunkID chunk_id = glm::vec2(cx, cz);
@@ -107,6 +110,8 @@ void ChunkManager::LoadChunks()
 		}
 	}
 
+	timer.Stop();
+
 	// Only load meshes after all chunk block info has been generated for all chunks
 	// so we can reference adjacent chunk block types.
 	for (auto& p_chunk : chunks_pending) {
@@ -116,6 +121,12 @@ void ChunkManager::LoadChunks()
 		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_pending);
 		QueueChunk(chunk);
 	}
+}
+
+void ChunkManager::ClearChunks()
+{
+	noise_map.clear();
+	chunks.clear();
 }
 
 std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check)
