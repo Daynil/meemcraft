@@ -10,6 +10,24 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 	return chunk;
 }
 
+void ChunkManager::UploadCompletedChunks()
+{
+	const int max_upload_per_frame = 5;
+
+	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_pending_gpu_upload.size());
+
+	for (int i = 0; i < num_to_upload; i++) {
+		Chunk* chunk = chunks_pending_gpu_upload[i];
+		chunk->model->LoadToGPU();
+		chunks.emplace(chunk->id, chunk);
+	}
+
+	chunks_pending_gpu_upload.erase(
+		chunks_pending_gpu_upload.begin(),
+		chunks_pending_gpu_upload.begin() + num_to_upload
+	);
+}
+
 void ChunkManager::QueueChunk(Chunk* chunk)
 {
 	thread_pool->enqueue([this, chunk]() {
@@ -44,10 +62,12 @@ void ChunkManager::ProcessChunks()
 	// holding it up while we use the chunks.
 	lock.unlock();
 
+	//std::cout << "completed chunks: " + std::to_string(completed_chunks.size()) << std::endl;
+
 	for (auto chunk : completed_chunks) {
 		//std::cout << "Processed " << chunk << std::endl;
-		chunk->model->LoadToGPU();
-		chunks.emplace(chunk->id, chunk);
+		//chunk->model->LoadToGPU();
+		chunks_pending_gpu_upload.push_back(chunk);
 	}
 }
 
@@ -104,6 +124,8 @@ void ChunkManager::LoadChunks()
 
 	timer.Stop();
 
+	timer.Reset("adjacent chunks");
+
 	// Only load meshes after all chunk block info has been generated for all chunks
 	// so we can reference adjacent chunk block types.
 	for (auto& p_chunk : chunks_pending) {
@@ -111,6 +133,12 @@ void ChunkManager::LoadChunks()
 		// TODO: eventually we should combine all chunks and these pending ones
 		// so we can have access to ones already loaded too.
 		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_pending);
+	}
+
+	timer.Stop();
+
+	for (auto& p_chunk : chunks_pending) {
+		auto chunk = p_chunk.second;
 		QueueChunk(chunk);
 	}
 }

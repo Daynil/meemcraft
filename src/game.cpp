@@ -105,7 +105,10 @@ void Game::ProcessInput(float dt)
 			chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, random_int(0, 123456));
 			timer.Stop();
 
+			timer.Reset("noise map texture");
 			map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
+			timer.Stop();
+
 			chunk_manager->LoadChunks();
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
@@ -163,6 +166,7 @@ void Game::ProcessInput(float dt)
 void Game::Update(float dt)
 {
 	chunk_manager->ProcessChunks();
+	chunk_manager->UploadCompletedChunks();
 	fps = fps_counter.Update();
 	//CheckCollisions();
 	//particle_manager->Update(dt);

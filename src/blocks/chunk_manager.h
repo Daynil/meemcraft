@@ -30,6 +30,9 @@ public:
 	std::vector<double> noise_map;
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
+	std::vector<Chunk*> chunks_pending_gpu_upload;
+
+
 	std::queue<Chunk*> chunk_queue;
 	std::mutex queue_mutex;
 
@@ -40,6 +43,10 @@ public:
 	// Thread coordinating loop - loads data in from the workers via queue
 	// when available.
 	void ProcessChunks();
+
+	// Chunks that completed in rapid sequence take turns
+	// uploading to gpu
+	void UploadCompletedChunks();
 
 	// Put a chunk into queue to be processed in a thread.
 	void QueueChunk(Chunk* chunk);
