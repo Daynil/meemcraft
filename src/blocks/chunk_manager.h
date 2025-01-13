@@ -14,6 +14,7 @@
 #include "chunk.h"
 #include "shared.h"
 #include "util.h"
+#include "map_generation/map_generator.h"
 
 struct Vec2Comparator {
 	bool operator()(const ChunkID& a, const ChunkID& b) const {
@@ -24,23 +25,36 @@ struct Vec2Comparator {
 	}
 };
 
+struct CoordMap {
+	// Coord of chunk relative to chunks being generated
+	glm::vec2 relative_coord;
+	// Coord of chunk in world
+	ChunkID world_coord;
+};
+
 class ChunkManager
 {
 public:
+	static const int VIEW_DIST_CHUNKS = 10;
+
 	std::vector<std::vector<double>> noise_map;
+	// Not thread safe, accessible to main thread only
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
+	ThreadPool* thread_pool;
+	// Thread safe variables
+	std::mutex queue_mutex;
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_queue;
 	bool chunks_to_queue_ready = false;
 	std::vector<Chunk*> chunks_cpu_queue;
 	std::vector<Chunk*> chunks_gpu_queue;
-
 	std::queue<Chunk*> chunk_queue;
-	std::mutex queue_mutex;
 
-	ThreadPool* thread_pool;
+	MapGenerator* map_generator;
 
-	ChunkManager(ThreadPool* thread_pool) : thread_pool(thread_pool) {};
+	ChunkManager(ThreadPool* thread_pool, MapGenerator* map_generator) : thread_pool(thread_pool), map_generator(map_generator) {};
+
+	void GenerateChunksCenteredAt(glm::vec2 position);
 
 	// 1.
 	// When we're ready to create a new set of chunks, this sets off a set of coordinated queues
@@ -51,7 +65,7 @@ public:
 	// For a given set of chunks to load, create their data first.
 	// This is the minimal work we need to do before we start calculating meshes because
 	// meshes need all adjacent chunks to have this data.
-	void CreateInitialChunkData();
+	void CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen);
 
 	// 3.
 	// Thread coordinating loop:
@@ -81,4 +95,6 @@ private:
 	// Load a chunk - determine block types by noise_map, which faces
 	// to render, and load geometry.
 	Chunk* LoadChunk(Chunk* chunk);
+
+	Chunk* GetChunkOrNull(ChunkID chunk_id);
 };

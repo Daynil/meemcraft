@@ -25,7 +25,7 @@ public:
 	MapGenerator(RenderingManager* rendering_manager);
 	~MapGenerator();
 
-	std::vector<std::vector<double>> GenerateMap(int map_size, unsigned int seed);
+	std::vector<std::vector<double>> GenerateMap(int size_x, int size_z, int offset_x, int offset_z, unsigned int seed);
 
 	void CreateNoisemapTexture(std::vector<std::vector<double>> noisemap);
 	void DrawNoisemap();

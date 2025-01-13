@@ -28,16 +28,16 @@ MapGenerator::~MapGenerator()
 }
 
 // https://www.redblobgames.com/maps/terrain-from-noise/
-std::vector<std::vector<double>> MapGenerator::GenerateMap(int map_size, unsigned int seed)
+std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_z, unsigned int seed)
 {
-	std::vector<std::vector<double>> noise_data(map_size, std::vector<double>(map_size));
+	std::vector<std::vector<double>> noise_data(size_x, std::vector<double>(size_z));
 
 	const siv::PerlinNoise perlin{ seed };
 
-	for (int x = 0; x < map_size; ++x) {
-		for (int z = 0; z < map_size; ++z) {
-			const double nx = x / static_cast<double>(map_size) - 0.5;
-			const double ny = z / static_cast<double>(map_size) - 0.5;
+	for (int x = 0; x < size_x; ++x) {
+		for (int z = 0; z < size_z; ++z) {
+			const double nx = (x + offset_x) / static_cast<double>(size_x) - 0.5;
+			const double ny = (z + offset_z) / static_cast<double>(size_z) - 0.5;
 
 			double e = (1.0f * (perlin.noise2D(1 * nx, 1 * ny) / 2 + 0.5) +
 				0.5f * (perlin.noise2D(2 * nx, 2 * ny) / 2 + 0.5) +
@@ -56,8 +56,8 @@ std::vector<std::vector<double>> MapGenerator::GenerateMap(int map_size, unsigne
 	double max_noise = 0.0;
 	double min_noise = 99.0;
 
-	for (int x = 0; x < map_size; ++x) {
-		for (int z = 0; z < map_size; ++z) {
+	for (int x = 0; x < size_x; ++x) {
+		for (int z = 0; z < size_z; ++z) {
 			const double noise_value = noise_data[x][z];
 			if (noise_value > max_noise)
 				max_noise = noise_value;
@@ -66,8 +66,8 @@ std::vector<std::vector<double>> MapGenerator::GenerateMap(int map_size, unsigne
 		}
 	}
 
-	for (int x = 0; x < map_size; ++x) {
-		for (int z = 0; z < map_size; ++z) {
+	for (int x = 0; x < size_x; ++x) {
+		for (int z = 0; z < size_z; ++z) {
 			const double noise_value = noise_data[x][z];
 
 			double adj_noise = noise_value - min_noise;

@@ -46,7 +46,7 @@ void Game::Init()
 	rendering_manager->Init(camera);
 
 	map_generator = new MapGenerator(rendering_manager);
-	chunk_manager = new ChunkManager(&thread_pool);
+	chunk_manager = new ChunkManager(&thread_pool, map_generator);
 
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),
@@ -61,31 +61,32 @@ void Game::Init()
 
 void Game::ResetGame()
 {
-	LoadLevel();
+	LoadLevel(0, 0);
 }
 
-void Game::LoadLevel(int seed)
+void Game::LoadLevel(int offset_x, int offset_z)
 {
 	Blocks.clear();
 
-	chunk_manager->ClearChunks();
+	//chunk_manager->ClearChunks();
 
-	Timer timer("Genning noise map");
-	int view_distance = 10;
-	int chunks_per_side = view_distance * 2 + 1;
+	//Timer timer("Genning noise map");
+	//int view_distance = 10;
+	//int chunks_per_side = view_distance * 2 + 1;
 	// Note: map size must correspond to chunk size x (16) times chunks per side
 	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
 	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
-	chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, seed);
+	//chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_X * chunks_per_side, offset_x, offset_z, seed);
 
-	if (State == DEBUG) {
-		timer.Reset("Creating noise texture");
-		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
-	}
+	//if (State == DEBUG) {
+	//	timer.Reset("Creating noise texture");
+	//	//map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
+	//}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-	timer.Reset("Starting on chunks");
-	chunk_manager->QueueChunks();
+	//timer.Reset("Starting on chunks");
+	//chunk_manager->QueueChunks();
+	chunk_manager->GenerateChunksCenteredAt(glm::vec2(0, 0));
 }
 
 
@@ -93,7 +94,10 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			LoadLevel(random_int(1, 1000));
+			int view_distance = 10;
+			int chunks_per_side = view_distance * 2 + 1;
+			//LoadLevel(chunks_per_side * Chunk::CHUNK_SIZE_X, chunks_per_side * Chunk::CHUNK_SIZE_Z);
+			LoadLevel(0, chunks_per_side * Chunk::CHUNK_SIZE_Z);
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}
@@ -109,14 +113,14 @@ void Game::ProcessInput(float dt)
 			level += 1;
 			if (level == 11)
 				level = 10;
-			LoadLevel();
+			//LoadLevel();
 			keyboard_keys_processed[GLFW_KEY_W] = true;
 		}
 		if (keyboard_keys[GLFW_KEY_S] && !keyboard_keys_processed[GLFW_KEY_S]) {
 			level -= 1;
 			if (level == 0)
 				level = 1;
-			LoadLevel();
+			//LoadLevel();
 			keyboard_keys_processed[GLFW_KEY_S] = true;
 		}
 		return;
@@ -128,6 +132,12 @@ void Game::ProcessInput(float dt)
 	// Keyboard controls
 	if (keyboard_keys[GLFW_KEY_W] || keyboard_keys[GLFW_KEY_UP]) {
 		camera->Move(dt, glm::vec2(0.0f, -1.0f));
+		//print(std::format("Camera pos: {0}, {1}, {2}", camera->cameraPos.x, camera->cameraPos.y, camera->cameraPos.z));
+		int view_distance = 10;
+		int chunks_per_side = view_distance * 2 + 1;
+		auto last_viz_z = camera->cameraPos.z + (view_distance * Chunk::CHUNK_SIZE_X);
+		int last_viz_cz = last_viz_z / Chunk::CHUNK_SIZE_Z;
+		print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
 	}
 	if (keyboard_keys[GLFW_KEY_A] || keyboard_keys[GLFW_KEY_LEFT]) {
 		camera->Move(dt, glm::vec2(-1.0f, 0.0f));

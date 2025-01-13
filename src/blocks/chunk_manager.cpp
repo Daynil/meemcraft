@@ -1,4 +1,4 @@
-#include "chunk_manager.h"
+#include "chunk_manager.h"''
 
 #include <iostream>
 
@@ -9,25 +9,49 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 	return chunk;
 }
 
-void ChunkManager::QueueChunks()
+void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 {
-	thread_pool->enqueue([this]() {
-		CreateInitialChunkData();
+	int pos_x = position.x;
+	int pos_z = position.y;
+
+	int cx = pos_x / Chunk::CHUNK_SIZE_X;
+	int cz = pos_z / Chunk::CHUNK_SIZE_Z;
+
+	std::vector<CoordMap> chunks_to_gen;
+
+	// Skip chunks already being displayed
+	int rx = 0;
+	int rz = 0;
+	for (int wx = cx - VIEW_DIST_CHUNKS; wx < cx + VIEW_DIST_CHUNKS; wx++) {
+		for (int wz = cx - VIEW_DIST_CHUNKS; wz < cx + VIEW_DIST_CHUNKS; wz++) {
+			ChunkID chunk_id = glm::vec2(wx, wz);
+			if (!GetChunkOrNull(chunk_id)) {
+				chunks_to_gen.push_back(CoordMap{ glm::vec2(rx, rz), chunk_id });
+			}
+			rz++;
+		}
+		rx++;
+		rz = 0;
+	}
+
+	//auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + Chunk::CHUNK_SIZE_X;
+	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + 1;
+	noise_map = map_generator->GenerateMap(map_size, map_size, cx * Chunk::CHUNK_SIZE_X, cz * Chunk::CHUNK_SIZE_Z, 123457);
+
+	// Note: debug only
+	map_generator->CreateNoisemapTexture(noise_map);
+
+	thread_pool->enqueue([this, chunks_to_gen]() {
+		CreateInitialChunkData(chunks_to_gen);
 	});
 }
 
-void ChunkManager::CreateInitialChunkData()
+void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 {
 	// TODO:
-	// Make this async
 	// View frustrum culling
 	int view_distance = 10;
 	int chunks_per_side = view_distance * 2 + 1;
-	glm::vec3 map_size = glm::vec3(
-		Chunk::CHUNK_SIZE_X * chunks_per_side,
-		Chunk::CHUNK_SIZE_Y,
-		Chunk::CHUNK_SIZE_Z * chunks_per_side
-	);
 
 	std::vector<std::vector<double>> chunk_map_data(
 		Chunk::CHUNK_SIZE_X, std::vector<double>(Chunk::CHUNK_SIZE_Z)
@@ -35,31 +59,65 @@ void ChunkManager::CreateInitialChunkData()
 
 	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
 
-	for (int cx = 0; cx < chunks_per_side; cx++) {
-		for (int cz = 0; cz < chunks_per_side; cz++) {
-			ChunkID chunk_id = glm::vec2(cx, cz);
-
-			for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
-				for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-					chunk_map_data[x][z] = noise_map[cx * Chunk::CHUNK_SIZE_X + x][cz * Chunk::CHUNK_SIZE_Z + z];
+	for (auto& chunk_coord_map : chunks_to_gen) {
+		for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
+			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
+				// Check bounds
+				int row_index = chunk_coord_map.relative_coord.x * Chunk::CHUNK_SIZE_X + x;
+				if (row_index < 0 || row_index >= noise_map.size()) {
+					std::cerr << "Row index out of bounds: " << row_index << std::endl;
+					assert(false); // Breaks here during debug mode
 				}
-			}
 
-			local_chunks_to_queue.emplace(
-				chunk_id,
-				new Chunk(
-					chunk_id,
-					glm::vec3(
-						(cx * Chunk::CHUNK_SIZE_X),
-						// Shift sea level to y = 0
-						-(Chunk::CHUNK_SIZE_Y / 2),
-						(cz * Chunk::CHUNK_SIZE_Z)
-					),
-					&chunk_map_data
-				)
-			);
+				int col_index = chunk_coord_map.relative_coord.y * Chunk::CHUNK_SIZE_Z + z;
+				if (col_index < 0 || col_index >= noise_map[row_index].size()) {
+					std::cerr << "Column index out of bounds: " << col_index << std::endl;
+					assert(false); // Breaks here during debug mode
+				}
+				chunk_map_data[x][z] = noise_map.at(row_index).at(col_index);
+			}
 		}
+
+		local_chunks_to_queue.emplace(
+			chunk_coord_map.world_coord,
+			new Chunk(
+				chunk_coord_map.world_coord,
+				glm::vec3(
+					(chunk_coord_map.world_coord.x * Chunk::CHUNK_SIZE_X),
+					// Shift sea level to y = 0
+					-(Chunk::CHUNK_SIZE_Y / 2),
+					(chunk_coord_map.world_coord.y * Chunk::CHUNK_SIZE_Z)
+				),
+				&chunk_map_data
+			)
+		);
 	}
+
+	//for (int cx = 0; cx < chunks_per_side; cx++) {
+	//	for (int cz = 0; cz < chunks_per_side; cz++) {
+	//		ChunkID chunk_id = glm::vec2(cx, cz);
+
+	//		for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
+	//			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
+	//				chunk_map_data[x][z] = noise_map[cx * Chunk::CHUNK_SIZE_X + x][cz * Chunk::CHUNK_SIZE_Z + z];
+	//			}
+	//		}
+
+	//		local_chunks_to_queue.emplace(
+	//			chunk_id,
+	//			new Chunk(
+	//				chunk_id,
+	//				glm::vec3(
+	//					(cx * Chunk::CHUNK_SIZE_X),
+	//					// Shift sea level to y = 0
+	//					-(Chunk::CHUNK_SIZE_Y / 2),
+	//					(cz * Chunk::CHUNK_SIZE_Z)
+	//				),
+	//				&chunk_map_data
+	//			)
+	//		);
+	//	}
+	//}
 
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
@@ -196,4 +254,13 @@ std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
 	);
 
 	return adjacent_chunks;
+}
+
+Chunk* ChunkManager::GetChunkOrNull(ChunkID chunk_id)
+{
+	auto it = chunks.find(chunk_id);
+	if (it == chunks.end())
+		return nullptr;
+	else
+		return it->second;
 }
