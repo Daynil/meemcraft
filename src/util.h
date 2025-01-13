@@ -32,6 +32,16 @@ inline unsigned int GetOptimalThreadCount() {
 	return (max_threads > 1) ? max_threads - 1 : 1;
 }
 
+inline void sleep_ms(int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+inline void print(std::string text)
+{
+	std::cout << text << std::endl;
+}
+
 class FPSCounter
 {
 private:
@@ -78,6 +88,7 @@ public:
 	void Reset(std::string rename = "")
 	{
 		if (rename.size()) {
+			Stop();
 			name = rename;
 		}
 		start_time = std::chrono::high_resolution_clock::now();

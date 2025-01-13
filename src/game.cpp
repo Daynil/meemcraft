@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <format>
+#include <future>
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -63,32 +64,28 @@ void Game::ResetGame()
 	LoadLevel();
 }
 
-void Game::LoadLevel()
+void Game::LoadLevel(int seed)
 {
 	Blocks.clear();
 
+	chunk_manager->ClearChunks();
+
+	Timer timer("Genning noise map");
 	int view_distance = 10;
 	int chunks_per_side = view_distance * 2 + 1;
 	// Note: map size must correspond to chunk size x (16) times chunks per side
 	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
 	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
-	chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, 123457);
+	chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, seed);
 
 	if (State == DEBUG) {
+		timer.Reset("Creating noise texture");
 		map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
 	}
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+	timer.Reset("Starting on chunks");
 	chunk_manager->QueueChunks();
-
-	//for (int i = 0; i < chunk_size; i++)
-	//{
-
-	//	Blocks.push_back(Block(
-	//		(BlockType)i,
-	//		glm::vec3(i, 0, i)
-	//	));
-	//}
 }
 
 
@@ -96,20 +93,7 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			int view_distance = 10;
-			int chunks_per_side = view_distance * 2 + 1;
-
-			chunk_manager->ClearChunks();
-
-			Timer timer("noise map gen");
-			chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, random_int(0, 123456));
-			timer.Stop();
-
-			timer.Reset("noise map texture");
-			map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
-			timer.Stop();
-
-			chunk_manager->QueueChunks();
+			LoadLevel(random_int(1, 1000));
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}

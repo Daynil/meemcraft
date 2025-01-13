@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-
 Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 {
 	chunk->GenerateMesh();
@@ -10,43 +9,90 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 	return chunk;
 }
 
-void ChunkManager::UploadCompletedChunks()
+void ChunkManager::QueueChunks()
 {
-	const int max_upload_per_frame = 20;
-
-	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
-
-	for (int i = 0; i < num_to_upload; i++) {
-		Chunk* chunk = chunks_gpu_queue[i];
-		chunk->model->LoadToGPU();
-		chunks.emplace(chunk->id, chunk);
-	}
-
-	chunks_gpu_queue.erase(
-		chunks_gpu_queue.begin(),
-		chunks_gpu_queue.begin() + num_to_upload
-	);
+	thread_pool->enqueue([this]() {
+		CreateInitialChunkData();
+	});
 }
 
-void ChunkManager::QueueChunk(Chunk* chunk)
+void ChunkManager::CreateInitialChunkData()
 {
-	thread_pool->enqueue([this, chunk]() {
-		// Immediately calls LoadChunk, and work starts right here.
-		// But, doesn't block main thread since we 
-		auto result = LoadChunk(chunk);
-		{
-			// We want to push to the queue from a thread, so we lock it.
-			std::lock_guard<std::mutex> lock(queue_mutex);
-			// Push the completed chunk to our queue for ProcessChunks to handle.
-			chunk_queue.push(result);
+	// TODO:
+	// Make this async
+	// View frustrum culling
+	int view_distance = 10;
+	int chunks_per_side = view_distance * 2 + 1;
+	glm::vec3 map_size = glm::vec3(
+		Chunk::CHUNK_SIZE_X * chunks_per_side,
+		Chunk::CHUNK_SIZE_Y,
+		Chunk::CHUNK_SIZE_Z * chunks_per_side
+	);
+
+	std::vector<double> chunk_map_data;
+	chunk_map_data.reserve(Chunk::CHUNK_SIZE_X * Chunk::CHUNK_SIZE_Z);
+
+	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
+
+	for (int cx = 0; cx < chunks_per_side; cx++) {
+		for (int cz = 0; cz < chunks_per_side; cz++) {
+			ChunkID chunk_id = glm::vec2(cx, cz);
+
+			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
+				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
+
+				chunk_map_data.insert(
+					chunk_map_data.end(),
+					noise_map.begin() + row_start,
+					noise_map.begin() + row_start + Chunk::CHUNK_SIZE_X
+				);
+			}
+
+			local_chunks_to_queue.emplace(
+				chunk_id,
+				new Chunk(
+					chunk_id,
+					glm::vec3(
+						(cx * Chunk::CHUNK_SIZE_X),
+						// Shift sea level to y = 0
+						-(Chunk::CHUNK_SIZE_Y / 2),
+						(cz * Chunk::CHUNK_SIZE_Z)
+					),
+					&chunk_map_data
+				)
+			);
+
+			chunk_map_data.clear();
 		}
-	});
+	}
+
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		for (auto& chunk_p : local_chunks_to_queue) {
+			chunks_to_queue.emplace(chunk_p.first, chunk_p.second);
+		}
+		chunks_to_queue_ready = true;
+	}
 }
 
 void ChunkManager::ProcessChunks()
 {
 	// Briefly lock the queue to check if we have any new chunks completed.
 	std::unique_lock<std::mutex> lock(queue_mutex);
+
+	if (chunks_to_queue_ready) {
+		// Only load meshes after all chunk block info has been generated for all chunks
+		// so we can reference adjacent chunk block types.
+		for (auto& p_chunk : chunks_to_queue) {
+			auto chunk = p_chunk.second;
+			// TODO: eventually we should combine all complete chunks near pending ones with these pending ones
+			// so we can have access to ones already loaded too.
+			chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_to_queue);
+			chunks_cpu_queue.push_back(chunk);
+		}
+		chunks_to_queue.clear();
+		chunks_to_queue_ready = false;
+	}
 
 	std::vector<Chunk*> completed_chunks;
 	while (!chunk_queue.empty())
@@ -67,67 +113,6 @@ void ChunkManager::ProcessChunks()
 	}
 }
 
-void ChunkManager::QueueChunks()
-{
-	// TODO:
-	// Make this async
-	// View frustrum culling
-	int view_distance = 10;
-	int chunks_per_side = view_distance * 2 + 1;
-	glm::vec3 map_size = glm::vec3(
-		Chunk::CHUNK_SIZE_X * chunks_per_side,
-		Chunk::CHUNK_SIZE_Y,
-		Chunk::CHUNK_SIZE_Z * chunks_per_side
-	);
-
-	std::vector<double> chunk_map_data;
-	chunk_map_data.reserve(Chunk::CHUNK_SIZE_X * Chunk::CHUNK_SIZE_Z);
-
-	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_pending;
-
-	for (int cx = 0; cx < chunks_per_side; cx++) {
-		for (int cz = 0; cz < chunks_per_side; cz++) {
-			ChunkID chunk_id = glm::vec2(cx, cz);
-
-			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
-
-				chunk_map_data.insert(
-					chunk_map_data.end(),
-					noise_map.begin() + row_start,
-					noise_map.begin() + row_start + Chunk::CHUNK_SIZE_X
-				);
-			}
-
-			chunks_pending.emplace(
-				chunk_id,
-				new Chunk(
-					chunk_id,
-					glm::vec3(
-						(cx * Chunk::CHUNK_SIZE_X),
-						// Shift sea level to y = 0
-						-(Chunk::CHUNK_SIZE_Y / 2),
-						(cz * Chunk::CHUNK_SIZE_Z)
-					),
-					&chunk_map_data
-				)
-			);
-
-			chunk_map_data.clear();
-		}
-	}
-
-	// Only load meshes after all chunk block info has been generated for all chunks
-	// so we can reference adjacent chunk block types.
-	for (auto& p_chunk : chunks_pending) {
-		auto chunk = p_chunk.second;
-		// TODO: eventually we should combine all chunks and these pending ones
-		// so we can have access to ones already loaded too.
-		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_pending);
-		chunks_cpu_queue.push_back(chunk);
-	}
-}
-
 void ChunkManager::LoadChunks()
 {
 	const int max_load_per_frame = 3;
@@ -141,6 +126,39 @@ void ChunkManager::LoadChunks()
 	chunks_cpu_queue.erase(
 		chunks_cpu_queue.begin(),
 		chunks_cpu_queue.begin() + num_to_load
+	);
+}
+
+void ChunkManager::QueueChunk(Chunk* chunk)
+{
+	thread_pool->enqueue([this, chunk]() {
+		// Immediately calls LoadChunk, and work starts right here.
+		// But, doesn't block main thread since we 
+		auto result = LoadChunk(chunk);
+		{
+			// We want to push to the queue from a thread, so we lock it.
+			std::lock_guard<std::mutex> lock(queue_mutex);
+			// Push the completed chunk to our queue for ProcessChunks to handle.
+			chunk_queue.push(result);
+		}
+	});
+}
+
+void ChunkManager::UploadCompletedChunks()
+{
+	const int max_upload_per_frame = 20;
+
+	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
+
+	for (int i = 0; i < num_to_upload; i++) {
+		Chunk* chunk = chunks_gpu_queue[i];
+		chunk->model->LoadToGPU();
+		chunks.emplace(chunk->id, chunk);
+	}
+
+	chunks_gpu_queue.erase(
+		chunks_gpu_queue.begin(),
+		chunks_gpu_queue.begin() + num_to_upload
 	);
 }
 

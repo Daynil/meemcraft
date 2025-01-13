@@ -97,7 +97,7 @@ public:
 
 	bool LevelComplete();
 	void ResetGame();
-	void LoadLevel();
+	void LoadLevel(int seed = 123457);
 
 	//void RollForPowerup(Brick& brick_destroyed);
 
