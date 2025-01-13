@@ -28,18 +28,16 @@ MapGenerator::~MapGenerator()
 }
 
 // https://www.redblobgames.com/maps/terrain-from-noise/
-std::vector<double> MapGenerator::GenerateMap(int map_size, unsigned int seed)
+std::vector<std::vector<double>> MapGenerator::GenerateMap(int map_size, unsigned int seed)
 {
-	std::vector<double> noise_data(map_size * map_size);
+	std::vector<std::vector<double>> noise_data(map_size, std::vector<double>(map_size));
 
 	const siv::PerlinNoise perlin{ seed };
 
-	for (int y = 0; y < map_size; ++y) {
-		for (int x = 0; x < map_size; ++x) {
+	for (int x = 0; x < map_size; ++x) {
+		for (int z = 0; z < map_size; ++z) {
 			const double nx = x / static_cast<double>(map_size) - 0.5;
-			const double ny = y / static_cast<double>(map_size) - 0.5;
-
-			int noise_index = (y * map_size + x);
+			const double ny = z / static_cast<double>(map_size) - 0.5;
 
 			double e = (1.0f * (perlin.noise2D(1 * nx, 1 * ny) / 2 + 0.5) +
 				0.5f * (perlin.noise2D(2 * nx, 2 * ny) / 2 + 0.5) +
@@ -50,8 +48,7 @@ std::vector<double> MapGenerator::GenerateMap(int map_size, unsigned int seed)
 			e = e / (1.0f + 0.5f + 0.25f + 0.13f + 0.06f + 0.03f);
 			e = std::pow(e, 15.0f);
 
-			noise_data[noise_index] = e;
-			//noise_data[noise_index] = perlin.octave2D_01((x * nx), (y * ny), octaves);
+			noise_data[x][z] = e;
 		}
 	}
 
@@ -59,10 +56,9 @@ std::vector<double> MapGenerator::GenerateMap(int map_size, unsigned int seed)
 	double max_noise = 0.0;
 	double min_noise = 99.0;
 
-	for (int y = 0; y < map_size; ++y) {
-		for (int x = 0; x < map_size; ++x) {
-			int noise_index = (y * map_size + x);
-			const double noise_value = noise_data[noise_index];
+	for (int x = 0; x < map_size; ++x) {
+		for (int z = 0; z < map_size; ++z) {
+			const double noise_value = noise_data[x][z];
 			if (noise_value > max_noise)
 				max_noise = noise_value;
 			if (noise_value < min_noise)
@@ -70,24 +66,23 @@ std::vector<double> MapGenerator::GenerateMap(int map_size, unsigned int seed)
 		}
 	}
 
-	for (int y = 0; y < map_size; ++y) {
-		for (int x = 0; x < map_size; ++x) {
-			int noise_index = (y * map_size + x);
-			const double noise_value = noise_data[noise_index];
+	for (int x = 0; x < map_size; ++x) {
+		for (int z = 0; z < map_size; ++z) {
+			const double noise_value = noise_data[x][z];
 
 			double adj_noise = noise_value - min_noise;
 			adj_noise = adj_noise / max_noise;
 
-			noise_data[noise_index] = adj_noise;
+			noise_data[x][z] = adj_noise;
 		}
 	}
 
 	return noise_data;
 }
 
-void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
+void MapGenerator::CreateNoisemapTexture(std::vector<std::vector<double>> noisemap)
 {
-	auto map_dim_size = std::sqrt(noisemap.size());
+	auto map_dim_size = noisemap[0].size();
 
 	// RGB = 3 channels
 	// We use unsigned char because each char is 8 bits, aka 1 byte
@@ -97,11 +92,11 @@ void MapGenerator::CreateNoisemapTexture(std::vector<double> noisemap)
 	// Thus, unsigned chars are a natural choice for image data.
 	std::vector<unsigned char> texture_noise_data(map_dim_size * map_dim_size * 3);
 
-	for (int y = 0; y < map_dim_size; y++) {
-		for (int x = 0; x < map_dim_size; x++) {
+	for (int x = 0; x < map_dim_size; x++) {
+		for (int z = 0; z < map_dim_size; z++) {
 			// RGB = 3 channels
-			int texture_index = (y * map_dim_size + x) * 3;
-			const double noise_value = noisemap[y * map_dim_size + x];
+			int texture_index = (z * map_dim_size + x) * 3;
+			const double noise_value = noisemap[x][z];
 
 			// Noise is 0 - 1, convert to rgb up to 255
 			unsigned char noise_c = static_cast<unsigned char>(noise_value * 255);

@@ -27,7 +27,7 @@ public:
 
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
 
-	Chunk(ChunkID id, glm::vec3 p_position, std::vector<double>* chunk_map_data);
+	Chunk(ChunkID id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data);
 
 	~Chunk() {
 		delete model;
@@ -38,7 +38,7 @@ public:
 
 	BlockType GetBlockType(double noise_value, int y);
 
-	void GenerateBlocks(std::vector<double>* chunk_map);
+	void GenerateBlocks(std::vector<std::vector<double>>* chunk_map);
 	void GenerateMesh();
 
 };

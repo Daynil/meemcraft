@@ -27,7 +27,7 @@ struct Vec2Comparator {
 class ChunkManager
 {
 public:
-	std::vector<double> noise_map;
+	std::vector<std::vector<double>> noise_map;
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_queue;

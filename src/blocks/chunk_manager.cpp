@@ -29,8 +29,9 @@ void ChunkManager::CreateInitialChunkData()
 		Chunk::CHUNK_SIZE_Z * chunks_per_side
 	);
 
-	std::vector<double> chunk_map_data;
-	chunk_map_data.reserve(Chunk::CHUNK_SIZE_X * Chunk::CHUNK_SIZE_Z);
+	std::vector<std::vector<double>> chunk_map_data(
+		Chunk::CHUNK_SIZE_X, std::vector<double>(Chunk::CHUNK_SIZE_Z)
+	);
 
 	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
 
@@ -38,14 +39,10 @@ void ChunkManager::CreateInitialChunkData()
 		for (int cz = 0; cz < chunks_per_side; cz++) {
 			ChunkID chunk_id = glm::vec2(cx, cz);
 
-			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-				int row_start = (cz * Chunk::CHUNK_SIZE_Z + z) * map_size.x + (cx * Chunk::CHUNK_SIZE_X);
-
-				chunk_map_data.insert(
-					chunk_map_data.end(),
-					noise_map.begin() + row_start,
-					noise_map.begin() + row_start + Chunk::CHUNK_SIZE_X
-				);
+			for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
+				for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
+					chunk_map_data[x][z] = noise_map[cx * Chunk::CHUNK_SIZE_X + x][cz * Chunk::CHUNK_SIZE_Z + z];
+				}
 			}
 
 			local_chunks_to_queue.emplace(
@@ -61,8 +58,6 @@ void ChunkManager::CreateInitialChunkData()
 					&chunk_map_data
 				)
 			);
-
-			chunk_map_data.clear();
 		}
 	}
 

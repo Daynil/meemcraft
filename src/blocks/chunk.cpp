@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<double>* chunk_map_data)
+Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data)
 {
 	id = p_id;
 	position = p_position;
@@ -109,12 +109,12 @@ BlockType Chunk::GetBlockType(double noise_value, int y)
 	return block;
 }
 
-void Chunk::GenerateBlocks(std::vector<double>* chunk_map)
+void Chunk::GenerateBlocks(std::vector<std::vector<double>>* chunk_map)
 {
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
-				const double noise_value = (*chunk_map)[z * CHUNK_SIZE_X + x];
+				const double noise_value = (*chunk_map)[x][z];
 				BlockInfo info;
 				info.type = GetBlockType(noise_value, y);
 				info.health = 10;
