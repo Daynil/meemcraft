@@ -20,8 +20,10 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	std::vector<CoordMap> chunks_to_gen;
 
 	// Skip chunks already being displayed
+	// Coords relative to those we're generating
 	int rx = 0;
 	int rz = 0;
+	// World coords
 	for (int wx = cx - VIEW_DIST_CHUNKS; wx < cx + VIEW_DIST_CHUNKS; wx++) {
 		for (int wz = cx - VIEW_DIST_CHUNKS; wz < cx + VIEW_DIST_CHUNKS; wz++) {
 			ChunkID chunk_id = glm::vec2(wx, wz);
