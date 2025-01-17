@@ -102,10 +102,11 @@ void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
-		for (auto& chunk_p : local_chunks_to_queue) {
-			chunks_to_queue.emplace(chunk_p.first, chunk_p.second);
-		}
-		chunks_to_queue_ready = true;
+		chunks_to_queue_batchs.push(local_chunks_to_queue);
+		//for (auto& chunk_p : local_chunks_to_queue) {
+		//	chunks_to_queue_batchs.emplace(chunk_p.first, chunk_p.second);
+		//}
+		//chunks_to_queue_ready = true;
 	}
 }
 
@@ -118,14 +119,10 @@ void ChunkManager::ProcessChunks()
 	// Briefly lock the queue to check if we have any new chunks completed.
 	std::unique_lock<std::mutex> lock(queue_mutex);
 
-	if (chunks_to_queue_ready) {
-		// Only load meshes after all chunk block info has been generated for all chunks
-		// so we can reference adjacent chunk block types.
-		for (auto& p_chunk : chunks_to_queue) {
-			local_chunks_to_queue.emplace(p_chunk.second->id, p_chunk.second);
-		}
-		chunks_to_queue.clear();
-		chunks_to_queue_ready = false;
+	if (!chunks_to_queue_batchs.empty() && !batch_processing) {
+		local_chunks_to_queue = std::move(chunks_to_queue_batchs.front());
+		chunks_to_queue_batchs.pop();
+		batch_processing = true;
 	}
 
 	while (!chunk_queue.empty())
@@ -140,7 +137,7 @@ void ChunkManager::ProcessChunks()
 	lock.unlock();
 
 	for (auto& chunk : completed_chunks) {
-		chunks_gpu_queue.push_back(chunk);
+		chunks_gpu_queue.push(chunk);
 	}
 
 	// Get adjacent chunks outside of mutex lock
@@ -156,7 +153,7 @@ void ChunkManager::ProcessChunks()
 		lock.lock();
 		for (auto& p_chunk : local_chunks_to_queue) {
 			auto chunk = p_chunk.second;
-			chunks_cpu_queue.push_back(chunk);
+			chunks_cpu_queue.push(chunk);
 		}
 		lock.unlock();
 	}
@@ -169,13 +166,9 @@ void ChunkManager::LoadChunks()
 	int num_to_load = std::min(max_load_per_frame, (int)chunks_cpu_queue.size());
 
 	for (int i = 0; i < num_to_load; i++) {
-		QueueChunk(chunks_cpu_queue[i]);
+		QueueChunk(std::move(chunks_cpu_queue.front()));
+		chunks_cpu_queue.pop();
 	}
-
-	chunks_cpu_queue.erase(
-		chunks_cpu_queue.begin(),
-		chunks_cpu_queue.begin() + num_to_load
-	);
 }
 
 void ChunkManager::QueueChunk(Chunk* chunk)
@@ -200,15 +193,14 @@ void ChunkManager::UploadCompletedChunks()
 	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
 
 	for (int i = 0; i < num_to_upload; i++) {
-		Chunk* chunk = chunks_gpu_queue[i];
+		Chunk* chunk = std::move(chunks_gpu_queue.front());
+		chunks_gpu_queue.pop();
 		chunk->model->LoadToGPU();
 		chunks.emplace(chunk->id, chunk);
 	}
 
-	chunks_gpu_queue.erase(
-		chunks_gpu_queue.begin(),
-		chunks_gpu_queue.begin() + num_to_upload
-	);
+	if (chunks_gpu_queue.empty())
+		batch_processing = false;
 }
 
 void ChunkManager::ClearChunks()

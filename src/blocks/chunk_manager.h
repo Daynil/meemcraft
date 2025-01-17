@@ -44,10 +44,11 @@ public:
 	ThreadPool* thread_pool;
 	// Thread safe variables
 	std::mutex queue_mutex;
-	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_queue;
-	bool chunks_to_queue_ready = false;
-	std::vector<Chunk*> chunks_cpu_queue;
-	std::vector<Chunk*> chunks_gpu_queue;
+	std::queue<std::map<ChunkID, Chunk*, Vec2Comparator>> chunks_to_queue_batchs;
+	bool batch_processing = false;
+	//bool chunks_to_queue_ready = false;
+	std::queue<Chunk*> chunks_cpu_queue;
+	std::queue<Chunk*> chunks_gpu_queue;
 	std::queue<Chunk*> chunk_queue;
 
 	MapGenerator* map_generator;
