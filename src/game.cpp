@@ -172,8 +172,7 @@ void Game::ProcessInput(float dt)
 void Game::Update(float dt)
 {
 	chunk_manager->LoadChunks();
-	chunk_manager->ProcessChunks();
-	chunk_manager->UploadCompletedChunks();
+	//chunk_manager->UploadCompletedChunks();
 	fps = fps_counter.Update();
 	//CheckCollisions();
 	//particle_manager->Update(dt);

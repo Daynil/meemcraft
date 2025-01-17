@@ -44,48 +44,38 @@ public:
 	ThreadPool* thread_pool;
 	// Thread safe variables
 	std::mutex queue_mutex;
-	std::queue<std::map<ChunkID, Chunk*, Vec2Comparator>> chunks_to_queue_batchs;
 	bool batch_processing = false;
-	//bool chunks_to_queue_ready = false;
 	std::queue<Chunk*> chunks_cpu_queue;
 	std::queue<Chunk*> chunks_gpu_queue;
-	std::queue<Chunk*> chunk_queue;
 
 	MapGenerator* map_generator;
 
 	ChunkManager(ThreadPool* thread_pool, MapGenerator* map_generator) : thread_pool(thread_pool), map_generator(map_generator) {};
 
+	// 1. Queue up needed chunks
 	void GenerateChunksCenteredAt(glm::vec2 position);
-
-	// 1.
-	// When we're ready to create a new set of chunks, this sets off a set of coordinated queues
-	// which use a thread pool to offload all expensive tasks off the main thread.
-	void QueueChunks();
 
 	// 2.
 	// For a given set of chunks to load, create their data first.
 	// This is the minimal work we need to do before we start calculating meshes because
 	// meshes need all adjacent chunks to have this data.
+	// This occurs on a thread pool to avoid work on main thread.
 	void CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen);
 
 	// 3.
 	// Thread coordinating loop:
-	// Checks for completion of initial chunk data, then queues to CPU. 
-	// Once the CPU queue completes tasks, pushes them to the GPU queue.
-	void ProcessChunks();
-
-	// 4.
-	// Chunks that are ready to process on CPU get throttled here to avoid swamping the CPU
+	// Chunks ready to process on CPU get throttled here to avoid swamping the CPU.
+	//     - CPU loads mesh data.
+	// Chunks ready for GPU likewise get throttled.
+	//     - Uploads final vertex data to GPU on main thread
+	//          (OpenGL requires everything on the main thread).
 	void LoadChunks();
 
-	// 5.
-	// Put a chunk into a thread pool to get its mesh data processed on the CPU.
+	// 4.
+	// Thread coordinating loop calls this to start loading mesh data in thread pool.
+	// When complete here, push to GPU queue for thread coordinating loop to finish
+	// upload.
 	void QueueChunk(Chunk* chunk);
-
-	// 6.
-	// Chunks that are ready to process on GPU get throttled here to avoid swamping the GPU.
-	// Uploads final vertex data to GPU on the main thread (OpenGL requires everything on main thread).
-	void UploadCompletedChunks();
 
 	// For debugging (regenerate map)
 	void ClearChunks();

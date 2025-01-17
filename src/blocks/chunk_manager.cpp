@@ -39,6 +39,14 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	if (chunks_to_gen.size() == 0)
 		return;
 
+	// TODO: create one more queue for CreateInitialChunkData
+	// and add to thread coordinating loop.
+	// We want to only ever process 1 chunk at a time.
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		batch_processing = true;
+	}
+
 	//auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + Chunk::CHUNK_SIZE_X;
 	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + 1;
 	noise_map = map_generator->GenerateMap(
@@ -100,62 +108,17 @@ void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 		);
 	}
 
+	for (auto& p_chunk : local_chunks_to_queue) {
+		auto chunk = p_chunk.second;
+		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, local_chunks_to_queue, chunks);
+	}
+
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
-		chunks_to_queue_batchs.push(local_chunks_to_queue);
-		//for (auto& chunk_p : local_chunks_to_queue) {
-		//	chunks_to_queue_batchs.emplace(chunk_p.first, chunk_p.second);
-		//}
-		//chunks_to_queue_ready = true;
-	}
-}
-
-void ChunkManager::ProcessChunks()
-{
-	// Local variables to hold queue mutex locally to minimize lock time
-	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
-	std::vector<Chunk*> completed_chunks;
-
-	// Briefly lock the queue to check if we have any new chunks completed.
-	std::unique_lock<std::mutex> lock(queue_mutex);
-
-	if (!chunks_to_queue_batchs.empty() && !batch_processing) {
-		local_chunks_to_queue = std::move(chunks_to_queue_batchs.front());
-		chunks_to_queue_batchs.pop();
-		batch_processing = true;
-	}
-
-	while (!chunk_queue.empty())
-	{
-		// If we have one ready, grab it.
-		// Use move to avoid copying chunks, just taking ownership of them.
-		completed_chunks.push_back(std::move(chunk_queue.front()));
-		// Since we've handled it, we can remove this chunk from the queue.
-		chunk_queue.pop();
-	}
-
-	lock.unlock();
-
-	for (auto& chunk : completed_chunks) {
-		chunks_gpu_queue.push(chunk);
-	}
-
-	// Get adjacent chunks outside of mutex lock
-	if (local_chunks_to_queue.size() > 0) {
-		for (auto& p_chunk : local_chunks_to_queue) {
-			auto chunk = p_chunk.second;
-			chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, local_chunks_to_queue, chunks);
-		}
-	}
-
-	if (local_chunks_to_queue.size() > 0) {
-		// Now that we have adjacent chunks, send to CPU for mesh generation
-		lock.lock();
 		for (auto& p_chunk : local_chunks_to_queue) {
 			auto chunk = p_chunk.second;
 			chunks_cpu_queue.push(chunk);
 		}
-		lock.unlock();
 	}
 }
 
@@ -169,25 +132,7 @@ void ChunkManager::LoadChunks()
 		QueueChunk(std::move(chunks_cpu_queue.front()));
 		chunks_cpu_queue.pop();
 	}
-}
 
-void ChunkManager::QueueChunk(Chunk* chunk)
-{
-	thread_pool->enqueue([this, chunk]() {
-		// Immediately calls LoadChunk, and work starts right here.
-		// But, doesn't block main thread since we 
-		auto result = LoadChunk(chunk);
-		{
-			// We want to push to the queue from a thread, so we lock it.
-			std::lock_guard<std::mutex> lock(queue_mutex);
-			// Push the completed chunk to our queue for ProcessChunks to handle.
-			chunk_queue.push(result);
-		}
-	});
-}
-
-void ChunkManager::UploadCompletedChunks()
-{
 	const int max_upload_per_frame = 3;
 
 	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
@@ -201,6 +146,22 @@ void ChunkManager::UploadCompletedChunks()
 
 	if (chunks_gpu_queue.empty())
 		batch_processing = false;
+}
+
+void ChunkManager::QueueChunk(Chunk* chunk)
+{
+	thread_pool->enqueue([this, chunk]() {
+		// Immediately calls LoadChunk, and work starts right here.
+		// But, doesn't block main thread since we 
+		auto result = LoadChunk(chunk);
+		{
+			// We want to push to the queue from a thread, so we lock it.
+			std::lock_guard<std::mutex> lock(queue_mutex);
+			// Push the completed chunk to our queue for ProcessChunks to handle.
+			//chunk_queue.push(result);
+			chunks_gpu_queue.push(result);
+		}
+	});
 }
 
 void ChunkManager::ClearChunks()
