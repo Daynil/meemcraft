@@ -25,7 +25,7 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	int rz = 0;
 	// World coords
 	for (int wx = cx - VIEW_DIST_CHUNKS; wx < cx + VIEW_DIST_CHUNKS; wx++) {
-		for (int wz = cx - VIEW_DIST_CHUNKS; wz < cx + VIEW_DIST_CHUNKS; wz++) {
+		for (int wz = cz - VIEW_DIST_CHUNKS; wz < cz + VIEW_DIST_CHUNKS; wz++) {
 			ChunkID chunk_id = glm::vec2(wx, wz);
 			if (!GetChunkOrNull(chunk_id)) {
 				chunks_to_gen.push_back(CoordMap{ glm::vec2(rx, rz), chunk_id });
@@ -36,9 +36,14 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 		rz = 0;
 	}
 
+	if (chunks_to_gen.size() == 0)
+		return;
+
 	//auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + Chunk::CHUNK_SIZE_X;
 	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + 1;
-	noise_map = map_generator->GenerateMap(map_size, map_size, cx * Chunk::CHUNK_SIZE_X, cz * Chunk::CHUNK_SIZE_Z, 123457);
+	noise_map = map_generator->GenerateMap(
+		map_size, map_size, cx * Chunk::CHUNK_SIZE_X, cz * Chunk::CHUNK_SIZE_Z, 123457
+	);
 
 	// Note: debug only
 	map_generator->CreateNoisemapTexture(noise_map);
@@ -95,32 +100,6 @@ void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 		);
 	}
 
-	//for (int cx = 0; cx < chunks_per_side; cx++) {
-	//	for (int cz = 0; cz < chunks_per_side; cz++) {
-	//		ChunkID chunk_id = glm::vec2(cx, cz);
-
-	//		for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
-	//			for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-	//				chunk_map_data[x][z] = noise_map[cx * Chunk::CHUNK_SIZE_X + x][cz * Chunk::CHUNK_SIZE_Z + z];
-	//			}
-	//		}
-
-	//		local_chunks_to_queue.emplace(
-	//			chunk_id,
-	//			new Chunk(
-	//				chunk_id,
-	//				glm::vec3(
-	//					(cx * Chunk::CHUNK_SIZE_X),
-	//					// Shift sea level to y = 0
-	//					-(Chunk::CHUNK_SIZE_Y / 2),
-	//					(cz * Chunk::CHUNK_SIZE_Z)
-	//				),
-	//				&chunk_map_data
-	//			)
-	//		);
-	//	}
-	//}
-
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
 		for (auto& chunk_p : local_chunks_to_queue) {
@@ -132,6 +111,10 @@ void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 
 void ChunkManager::ProcessChunks()
 {
+	// Local variables to hold queue mutex locally to minimize lock time
+	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
+	std::vector<Chunk*> completed_chunks;
+
 	// Briefly lock the queue to check if we have any new chunks completed.
 	std::unique_lock<std::mutex> lock(queue_mutex);
 
@@ -139,17 +122,12 @@ void ChunkManager::ProcessChunks()
 		// Only load meshes after all chunk block info has been generated for all chunks
 		// so we can reference adjacent chunk block types.
 		for (auto& p_chunk : chunks_to_queue) {
-			auto chunk = p_chunk.second;
-			// TODO: eventually we should combine all complete chunks near pending ones with these pending ones
-			// so we can have access to ones already loaded too.
-			chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_to_queue);
-			chunks_cpu_queue.push_back(chunk);
+			local_chunks_to_queue.emplace(p_chunk.second->id, p_chunk.second);
 		}
 		chunks_to_queue.clear();
 		chunks_to_queue_ready = false;
 	}
 
-	std::vector<Chunk*> completed_chunks;
 	while (!chunk_queue.empty())
 	{
 		// If we have one ready, grab it.
@@ -159,12 +137,28 @@ void ChunkManager::ProcessChunks()
 		chunk_queue.pop();
 	}
 
-	// Now that we have all our completed chunks, unlock the queue to avoid 
-	// holding it up while we use the chunks.
 	lock.unlock();
 
-	for (auto chunk : completed_chunks) {
+	for (auto& chunk : completed_chunks) {
 		chunks_gpu_queue.push_back(chunk);
+	}
+
+	// Get adjacent chunks outside of mutex lock
+	if (local_chunks_to_queue.size() > 0) {
+		for (auto& p_chunk : local_chunks_to_queue) {
+			auto chunk = p_chunk.second;
+			chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, local_chunks_to_queue, chunks);
+		}
+	}
+
+	if (local_chunks_to_queue.size() > 0) {
+		// Now that we have adjacent chunks, send to CPU for mesh generation
+		lock.lock();
+		for (auto& p_chunk : local_chunks_to_queue) {
+			auto chunk = p_chunk.second;
+			chunks_cpu_queue.push_back(chunk);
+		}
+		lock.unlock();
 	}
 }
 
@@ -201,7 +195,7 @@ void ChunkManager::QueueChunk(Chunk* chunk)
 
 void ChunkManager::UploadCompletedChunks()
 {
-	const int max_upload_per_frame = 20;
+	const int max_upload_per_frame = 3;
 
 	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
 
@@ -226,16 +220,24 @@ void ChunkManager::ClearChunks()
 	chunks.clear();
 }
 
-std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check)
+std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
+	ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
+	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_existing
+)
 {
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
 
-	auto get_chunk_or_null = [chunks_to_check](const glm::vec2& coord) -> Chunk* {
-		auto it = chunks_to_check.find(coord);
-		if (it == chunks_to_check.end())
+	auto get_chunk_or_null = [chunks_to_check_new, chunks_to_check_existing](
+		const glm::vec2& coord) -> Chunk* {
+		auto it_new = chunks_to_check_new.find(coord);
+		auto it_existing = chunks_to_check_existing.find(coord);
+		if (it_new == chunks_to_check_new.end() && it_existing == chunks_to_check_existing.end())
 			return nullptr;
+		else if (it_new == chunks_to_check_new.end()) {
+			return it_existing->second;
+		}
 		else
-			return it->second;
+			return it_new->second;
 	};
 
 	adjacent_chunks.emplace(

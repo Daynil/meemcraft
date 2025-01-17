@@ -89,7 +89,8 @@ public:
 	// For debugging (regenerate map)
 	void ClearChunks();
 
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check);
+	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
+		std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_existing);
 
 private:
 	// Load a chunk - determine block types by noise_map, which faces

@@ -89,6 +89,22 @@ void Game::LoadLevel(int offset_x, int offset_z)
 	chunk_manager->GenerateChunksCenteredAt(glm::vec2(0, 0));
 }
 
+bool first_gen = true;
+void Game::CheckLastVisibleChunkCoord()
+{
+	auto last_viz_z = camera->cameraPos.z + (ChunkManager::VIEW_DIST_CHUNKS * Chunk::CHUNK_SIZE_X);
+	int last_viz_cz = last_viz_z / Chunk::CHUNK_SIZE_Z;
+
+	if (last_viz_cz > last_visible_south_block && first_gen) {
+		//first_gen = false;
+		last_visible_south_block = last_viz_cz;
+		chunk_manager->GenerateChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.x));
+	}
+
+
+	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
+}
+
 
 void Game::ProcessInput(float dt)
 {
@@ -132,12 +148,7 @@ void Game::ProcessInput(float dt)
 	// Keyboard controls
 	if (keyboard_keys[GLFW_KEY_W] || keyboard_keys[GLFW_KEY_UP]) {
 		camera->Move(dt, glm::vec2(0.0f, -1.0f));
-		//print(std::format("Camera pos: {0}, {1}, {2}", camera->cameraPos.x, camera->cameraPos.y, camera->cameraPos.z));
-		int view_distance = 10;
-		int chunks_per_side = view_distance * 2 + 1;
-		auto last_viz_z = camera->cameraPos.z + (view_distance * Chunk::CHUNK_SIZE_X);
-		int last_viz_cz = last_viz_z / Chunk::CHUNK_SIZE_Z;
-		print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
+		CheckLastVisibleChunkCoord();
 	}
 	if (keyboard_keys[GLFW_KEY_A] || keyboard_keys[GLFW_KEY_LEFT]) {
 		camera->Move(dt, glm::vec2(-1.0f, 0.0f));
@@ -150,8 +161,9 @@ void Game::ProcessInput(float dt)
 	}
 
 	// Gamepad controls
-	if (left_stick_x != 0 || left_stick_y != 0)
+	if (left_stick_x != 0 || left_stick_y != 0) {
 		camera->Move(dt, glm::vec2(left_stick_x, left_stick_y));
+	}
 
 	if (gamepad_keys[GLFW_GAMEPAD_BUTTON_X])
 		should_release = true;

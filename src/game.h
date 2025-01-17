@@ -89,6 +89,11 @@ public:
 	bool gamepad_keys[1024] = { false };
 	bool gamepad_keys_processed[1024] = { false };
 
+	int last_visible_north_block = 0;
+	int last_visible_south_block = 0;
+	int last_visible_east_block = 0;
+	int last_visible_west_block = 0;
+
 	FPSCounter fps_counter;
 	float fps = 0;
 
@@ -101,7 +106,7 @@ public:
 	void ResetGame();
 	void LoadLevel(int offset_x, int offset_z);
 
-	//void RollForPowerup(Brick& brick_destroyed);
+	void CheckLastVisibleChunkCoord();
 
 	// Game loop
 	void ProcessInput(float dt);
