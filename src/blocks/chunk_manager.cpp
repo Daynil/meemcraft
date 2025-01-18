@@ -191,8 +191,9 @@ void ChunkManager::ProcessChunks()
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
 		bool batch_complete = chunks_in_batch == chunks_in_batch_complete;
+		int batches_left = chunks_initial_data_queue.size();
 		if (batch_processing && batch_complete) {
-			print("finished batch");
+			print("finished batch, batches remaining: " + std::to_string(batches_left));
 			chunks_in_batch_complete = 0;
 			batch_processing = false;
 		}
