@@ -17,7 +17,7 @@ public:
 
 	RawModel* raw_model;
 	Shader* shader;
-	Texture* texture;
+	Texture* texture = nullptr;
 
 	Entity noisemap;
 

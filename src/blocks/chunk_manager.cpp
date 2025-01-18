@@ -39,32 +39,28 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	if (chunks_to_gen.size() == 0)
 		return;
 
-	// TODO: create one more queue for CreateInitialChunkData
-	// and add to thread coordinating loop.
-	// We want to only ever process 1 chunk at a time.
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
-		batch_processing = true;
+		chunks_initial_data_queue.push({ glm::vec2(cx, cz), chunks_to_gen });
 	}
+}
+
+void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<CoordMap>> point_coord_map)
+{
+	auto& point = std::get<0>(point_coord_map);
+	auto& chunks_to_gen = std::get<1>(point_coord_map);
 
 	//auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + Chunk::CHUNK_SIZE_X;
 	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + 1;
 	noise_map = map_generator->GenerateMap(
-		map_size, map_size, cx * Chunk::CHUNK_SIZE_X, cz * Chunk::CHUNK_SIZE_Z, 123457
+		map_size, map_size, point.x * Chunk::CHUNK_SIZE_X, point.y * Chunk::CHUNK_SIZE_Z, 123457
 	);
 
-	// Note: debug only
-	map_generator->CreateNoisemapTexture(noise_map);
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		noisemap_data_generated = true;
+	}
 
-	thread_pool->enqueue([this, chunks_to_gen]() {
-		CreateInitialChunkData(chunks_to_gen);
-	});
-}
-
-void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
-{
-	// TODO:
-	// View frustrum culling
 	int view_distance = 10;
 	int chunks_per_side = view_distance * 2 + 1;
 
@@ -122,8 +118,32 @@ void ChunkManager::CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen)
 	}
 }
 
-void ChunkManager::LoadChunks()
+void ChunkManager::ProcessChunks()
 {
+	// Handle initial queue
+	// If we're not already processing a batch, start the pipeline
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		if (!batch_processing && !chunks_initial_data_queue.empty()) {
+			batch_processing = true;
+			std::tuple<glm::vec2, std::vector<CoordMap>> data = std::move(chunks_initial_data_queue.front());
+			chunks_initial_data_queue.pop();
+			thread_pool->enqueue([this, data]() {
+				CreateInitialChunkData(data);
+			});
+		}
+
+		if (noisemap_data_generated) {
+			// Note: debug only
+			// We create our noisemaps in a background thread, but OpenGL needs
+			// textures generated on the main thread.
+			// We create one noisemap per batch.
+			map_generator->CreateNoisemapTexture(noise_map);
+			noisemap_data_generated = false;
+		}
+	}
+
+	// Handle CPU queue
 	const int max_load_per_frame = 3;
 
 	int num_to_load = std::min(max_load_per_frame, (int)chunks_cpu_queue.size());
@@ -133,6 +153,7 @@ void ChunkManager::LoadChunks()
 		chunks_cpu_queue.pop();
 	}
 
+	// Handle GPU queue
 	const int max_upload_per_frame = 3;
 
 	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
@@ -144,8 +165,15 @@ void ChunkManager::LoadChunks()
 		chunks.emplace(chunk->id, chunk);
 	}
 
-	if (chunks_gpu_queue.empty())
-		batch_processing = false;
+	// Once all queues for a batch are empty, mark the batch complete so a new one
+	// can start.
+	bool batch_complete = chunks_initial_data_queue.empty() && chunks_cpu_queue.empty() && chunks_gpu_queue.empty();
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		if (batch_processing && batch_complete) {
+			batch_processing = false;
+		}
+	}
 }
 
 void ChunkManager::QueueChunk(Chunk* chunk)

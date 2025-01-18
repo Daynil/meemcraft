@@ -171,7 +171,7 @@ void Game::ProcessInput(float dt)
 
 void Game::Update(float dt)
 {
-	chunk_manager->LoadChunks();
+	chunk_manager->ProcessChunks();
 	//chunk_manager->UploadCompletedChunks();
 	fps = fps_counter.Update();
 	//CheckCollisions();
@@ -193,7 +193,7 @@ void Game::Render()
 		rendering_manager->ProcessChunk(p_chunk.second);
 	}
 
-	if (State == DEBUG) {
+	if (State == DEBUG && map_generator->texture) {
 		map_generator->DrawNoisemap();
 	}
 

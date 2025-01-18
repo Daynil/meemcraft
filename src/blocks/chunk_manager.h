@@ -45,8 +45,10 @@ public:
 	// Thread safe variables
 	std::mutex queue_mutex;
 	bool batch_processing = false;
+	std::queue<std::tuple<glm::vec2, std::vector<CoordMap>>> chunks_initial_data_queue;
 	std::queue<Chunk*> chunks_cpu_queue;
 	std::queue<Chunk*> chunks_gpu_queue;
+	bool noisemap_data_generated = false;
 
 	MapGenerator* map_generator;
 
@@ -56,20 +58,28 @@ public:
 	void GenerateChunksCenteredAt(glm::vec2 position);
 
 	// 2.
+	// Thread coordinating loop which, in batches, queues up the full pipeline
+	// (allowing only a single batch to process at a time to avoid race conditions)
+	// and handles needed main-thread actions:
+	// 
+	// Freshly queued chunks first get their initial data processed.
+	//	- Creates noisemap for the set of blocks
+	//	- Gets the initial block data and collects adjacent chunks
+	// 
+	// Chunks ready to process on CPU get throttled here to avoid swamping the CPU.
+	//	- CPU loads mesh data.
+	// 
+	// Chunks ready for GPU likewise get throttled.
+	//	- Uploads final vertex data to GPU on main thread 
+	//	(OpenGL requires everything on the main thread).
+	void ProcessChunks();
+
+	// 3.
 	// For a given set of chunks to load, create their data first.
 	// This is the minimal work we need to do before we start calculating meshes because
 	// meshes need all adjacent chunks to have this data.
 	// This occurs on a thread pool to avoid work on main thread.
-	void CreateInitialChunkData(std::vector<CoordMap> chunks_to_gen);
-
-	// 3.
-	// Thread coordinating loop:
-	// Chunks ready to process on CPU get throttled here to avoid swamping the CPU.
-	//     - CPU loads mesh data.
-	// Chunks ready for GPU likewise get throttled.
-	//     - Uploads final vertex data to GPU on main thread
-	//          (OpenGL requires everything on the main thread).
-	void LoadChunks();
+	void CreateInitialChunkData(std::tuple<glm::vec2, std::vector<CoordMap>> point_coord_map);
 
 	// 4.
 	// Thread coordinating loop calls this to start loading mesh data in thread pool.

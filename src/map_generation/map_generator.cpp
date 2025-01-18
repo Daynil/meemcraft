@@ -24,7 +24,8 @@ MapGenerator::~MapGenerator()
 {
 	delete raw_model;
 	delete shader;
-	delete texture;
+	if (texture)
+		delete texture;
 }
 
 // https://www.redblobgames.com/maps/terrain-from-noise/
