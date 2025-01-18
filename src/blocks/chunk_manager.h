@@ -45,6 +45,8 @@ public:
 	// Thread safe variables
 	std::mutex queue_mutex;
 	bool batch_processing = false;
+	int chunks_in_batch = 0;
+	int chunks_in_batch_complete = 0;
 	std::queue<std::tuple<glm::vec2, std::vector<CoordMap>>> chunks_initial_data_queue;
 	std::queue<Chunk*> chunks_cpu_queue;
 	std::queue<Chunk*> chunks_gpu_queue;

@@ -42,6 +42,7 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
 		chunks_initial_data_queue.push({ glm::vec2(cx, cz), chunks_to_gen });
+		print("pushed to queue");
 	}
 }
 
@@ -126,8 +127,12 @@ void ChunkManager::ProcessChunks()
 		std::unique_lock<std::mutex> lock(queue_mutex);
 		if (!batch_processing && !chunks_initial_data_queue.empty()) {
 			batch_processing = true;
+
 			std::tuple<glm::vec2, std::vector<CoordMap>> data = std::move(chunks_initial_data_queue.front());
 			chunks_initial_data_queue.pop();
+
+			chunks_in_batch = std::get<1>(data).size();
+
 			thread_pool->enqueue([this, data]() {
 				CreateInitialChunkData(data);
 			});
@@ -146,31 +151,49 @@ void ChunkManager::ProcessChunks()
 	// Handle CPU queue
 	const int max_load_per_frame = 3;
 
-	int num_to_load = std::min(max_load_per_frame, (int)chunks_cpu_queue.size());
-
-	for (int i = 0; i < num_to_load; i++) {
-		QueueChunk(std::move(chunks_cpu_queue.front()));
-		chunks_cpu_queue.pop();
+	{
+		// QueueChunk does minimal work on the main thread (just queues to thread pool), 
+		// so we can lock the thread quickly here
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		int num_to_load = std::min(max_load_per_frame, (int)chunks_cpu_queue.size());
+		for (int i = 0; i < num_to_load; i++) {
+			QueueChunk(std::move(chunks_cpu_queue.front()));
+			chunks_cpu_queue.pop();
+		}
 	}
 
 	// Handle GPU queue
 	const int max_upload_per_frame = 3;
 
-	int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		int num_to_upload = std::min(max_upload_per_frame, (int)chunks_gpu_queue.size());
+		lock.unlock();
 
-	for (int i = 0; i < num_to_upload; i++) {
-		Chunk* chunk = std::move(chunks_gpu_queue.front());
-		chunks_gpu_queue.pop();
-		chunk->model->LoadToGPU();
-		chunks.emplace(chunk->id, chunk);
+		for (int i = 0; i < num_to_upload; i++) {
+			// Lock carefully since LoadToGPU takes a while
+			lock.lock();
+			Chunk* chunk = std::move(chunks_gpu_queue.front());
+			chunks_gpu_queue.pop();
+			lock.unlock();
+
+			chunk->model->LoadToGPU();
+			chunks.emplace(chunk->id, chunk);
+
+			lock.lock();
+			chunks_in_batch_complete++;
+			lock.unlock();
+		}
 	}
 
 	// Once all queues for a batch are empty, mark the batch complete so a new one
 	// can start.
-	bool batch_complete = chunks_initial_data_queue.empty() && chunks_cpu_queue.empty() && chunks_gpu_queue.empty();
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
+		bool batch_complete = chunks_in_batch == chunks_in_batch_complete;
 		if (batch_processing && batch_complete) {
+			print("finished batch");
+			chunks_in_batch_complete = 0;
 			batch_processing = false;
 		}
 	}
