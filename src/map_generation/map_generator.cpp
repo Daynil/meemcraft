@@ -35,6 +35,10 @@ std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_
 
 	const siv::PerlinNoise perlin{ seed };
 
+	// Adjust output value to 0-1 range
+	double max_noise = 0.0;
+	double min_noise = 99.0;
+
 	for (int x = 0; x < size_x; ++x) {
 		for (int z = 0; z < size_z; ++z) {
 			const double nx = (x + offset_x) / static_cast<double>(size_x) - 0.5;
@@ -50,20 +54,11 @@ std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_
 			e = std::pow(e, 15.0f);
 
 			noise_data[x][z] = e;
-		}
-	}
 
-	// Adjust output value to 0-1 range
-	double max_noise = 0.0;
-	double min_noise = 99.0;
-
-	for (int x = 0; x < size_x; ++x) {
-		for (int z = 0; z < size_z; ++z) {
-			const double noise_value = noise_data[x][z];
-			if (noise_value > max_noise)
-				max_noise = noise_value;
-			if (noise_value < min_noise)
-				min_noise = noise_value;
+			if (e > max_noise)
+				max_noise = e;
+			if (e < min_noise)
+				min_noise = e;
 		}
 	}
 
