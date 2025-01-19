@@ -6,6 +6,7 @@ namespace ChunkDirection
 		LEFT,
 		RIGHT,
 		FRONT,
-		BACK
+		BACK,
+		COUNT
 	};
 }

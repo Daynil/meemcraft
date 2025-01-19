@@ -39,6 +39,30 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 	if (chunks_to_gen.size() == 0)
 		return;
 
+	// We need to remesh chunks adjacent to newly inserted ones
+	// since they may have culled faces where they shouldn't or vice versa
+	std::vector<CoordMap> adjacent_chunks_to_remesh;
+	for (auto& chunk_coord_map : chunks_to_gen) {
+		auto adjacent_chunks = GetAdjacentExistingChunks(chunk_coord_map.world_coord);
+		for (auto& adjacent_chunk_p : adjacent_chunks) {
+			auto* adjacent_chunk = adjacent_chunk_p.second;
+			if (adjacent_chunk) {
+				auto dist = GetChunkDistance(chunk_coord_map.world_coord, adjacent_chunk->id);
+				adjacent_chunks_to_remesh.push_back(
+					CoordMap{ glm::vec2(chunk_coord_map.relative_coord.x + dist.x, chunk_coord_map.relative_coord.y + dist.y),
+					adjacent_chunk->id }
+				);
+			}
+		}
+	}
+
+	chunks_to_gen.insert(chunks_to_gen.end(), adjacent_chunks_to_remesh.begin(), adjacent_chunks_to_remesh.end());
+
+	// Multiple chunks can have the same adjacent chunk, so remove duplicates first
+	std::sort(chunks_to_gen.begin(), chunks_to_gen.end());
+	auto it = std::unique(chunks_to_gen.begin(), chunks_to_gen.end());
+	chunks_to_gen.resize(std::distance(chunks_to_gen.begin(), it));
+
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);
 		chunks_initial_data_queue.push({ glm::vec2(cx, cz), chunks_to_gen });
@@ -178,7 +202,7 @@ void ChunkManager::ProcessChunks()
 			lock.unlock();
 
 			chunk->model->LoadToGPU();
-			chunks.emplace(chunk->id, chunk);
+			chunks.insert_or_assign(chunk->id, chunk);
 
 			lock.lock();
 			chunks_in_batch_complete++;
@@ -245,24 +269,54 @@ std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
 			return it_new->second;
 	};
 
-	adjacent_chunks.emplace(
-		ChunkDirection::AdjacentChunk::FRONT,
-		get_chunk_or_null(glm::vec2(chunk_id.x, chunk_id.y + 1))
-	);
-	adjacent_chunks.emplace(
-		ChunkDirection::AdjacentChunk::BACK,
-		get_chunk_or_null(glm::vec2(chunk_id.x, chunk_id.y - 1))
-	);
-	adjacent_chunks.emplace(
-		ChunkDirection::AdjacentChunk::LEFT,
-		get_chunk_or_null(glm::vec2(chunk_id.x - 1, chunk_id.y))
-	);
-	adjacent_chunks.emplace(
-		ChunkDirection::AdjacentChunk::RIGHT,
-		get_chunk_or_null(glm::vec2(chunk_id.x + 1, chunk_id.y))
-	);
+	for (int i = 0; i < ChunkDirection::AdjacentChunk::COUNT; i++)
+	{
+		ChunkDirection::AdjacentChunk dir = (ChunkDirection::AdjacentChunk)i;
+		adjacent_chunks.emplace(
+			dir,
+			get_chunk_or_null(GetAdjacentChunkID(chunk_id, dir))
+		);
+	}
 
 	return adjacent_chunks;
+}
+
+std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentExistingChunks(ChunkID chunk_id)
+{
+	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
+
+	for (int i = 0; i < ChunkDirection::AdjacentChunk::COUNT; i++)
+	{
+		ChunkDirection::AdjacentChunk dir = (ChunkDirection::AdjacentChunk)i;
+		adjacent_chunks.emplace(
+			dir,
+			GetChunkOrNull(GetAdjacentChunkID(chunk_id, dir))
+		);
+	}
+
+	return adjacent_chunks;
+}
+
+ChunkID ChunkManager::GetAdjacentChunkID(ChunkID chunk_id, ChunkDirection::AdjacentChunk direction)
+{
+	switch (direction)
+	{
+	case ChunkDirection::FRONT:
+		return glm::vec2(chunk_id.x, chunk_id.y + 1);
+	case ChunkDirection::BACK:
+		return glm::vec2(chunk_id.x, chunk_id.y - 1);
+	case ChunkDirection::LEFT:
+		return glm::vec2(chunk_id.x - 1, chunk_id.y);
+	case ChunkDirection::RIGHT:
+		return glm::vec2(chunk_id.x + 1, chunk_id.y);
+	default:
+		break;
+	}
+}
+
+glm::vec2 ChunkManager::GetChunkDistance(ChunkID chunk_id, ChunkID other_id)
+{
+	return glm::vec2(other_id.x - chunk_id.x, other_id.y - chunk_id.y);
 }
 
 Chunk* ChunkManager::GetChunkOrNull(ChunkID chunk_id)

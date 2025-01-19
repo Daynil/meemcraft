@@ -30,6 +30,18 @@ struct CoordMap {
 	glm::vec2 relative_coord;
 	// Coord of chunk in world
 	ChunkID world_coord;
+
+	bool operator==(const CoordMap& other) const {
+		return world_coord == other.world_coord;
+	}
+
+	bool operator<(const CoordMap& other) const {
+		if (world_coord.x != other.world_coord.x)
+			return world_coord.x < other.world_coord.x;
+		if (world_coord.y != other.world_coord.y)
+			return world_coord.y < other.world_coord.y;
+		return world_coord.x < other.world_coord.x;
+	}
 };
 
 class ChunkManager
@@ -92,8 +104,14 @@ public:
 	// For debugging (regenerate map)
 	void ClearChunks();
 
+	ChunkID GetAdjacentChunkID(ChunkID chunk_id, ChunkDirection::AdjacentChunk direction);
+
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
 		std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_existing);
+
+	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentExistingChunks(ChunkID chunk);
+
+	glm::vec2 GetChunkDistance(ChunkID chunk_id, ChunkID other_id);
 
 private:
 	// Load a chunk - determine block types by noise_map, which faces

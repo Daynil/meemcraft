@@ -96,7 +96,7 @@ void Game::CheckLastVisibleChunkCoord()
 	int last_viz_cz = last_viz_z / Chunk::CHUNK_SIZE_Z;
 
 	if (last_viz_cz > last_visible_south_block && first_gen) {
-		first_gen = false;
+		//first_gen = false;
 		last_visible_south_block = last_viz_cz;
 		chunk_manager->GenerateChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.x));
 	}
