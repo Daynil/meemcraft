@@ -68,8 +68,8 @@ public:
 
 	ChunkManager(ThreadPool* thread_pool, MapGenerator* map_generator) : thread_pool(thread_pool), map_generator(map_generator) {};
 
-	// 1. Queue up needed chunks
-	void GenerateChunksCenteredAt(glm::vec2 position);
+	// 1. Queue up needed chunks and delete those out of view dist
+	void RefreshChunksCenteredAt(glm::vec2 position);
 
 	// 2.
 	// Thread coordinating loop which, in batches, queues up the full pipeline

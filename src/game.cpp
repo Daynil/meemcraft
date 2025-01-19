@@ -86,7 +86,7 @@ void Game::LoadLevel(int offset_x, int offset_z)
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
 	//timer.Reset("Starting on chunks");
 	//chunk_manager->QueueChunks();
-	chunk_manager->GenerateChunksCenteredAt(glm::vec2(0, 0));
+	chunk_manager->RefreshChunksCenteredAt(glm::vec2(0, 0));
 }
 
 bool first_gen = true;
@@ -98,7 +98,7 @@ void Game::CheckLastVisibleChunkCoord()
 	if (last_viz_cz > last_visible_south_block && first_gen) {
 		//first_gen = false;
 		last_visible_south_block = last_viz_cz;
-		chunk_manager->GenerateChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.x));
+		chunk_manager->RefreshChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.x));
 	}
 
 

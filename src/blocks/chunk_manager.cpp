@@ -9,7 +9,7 @@ Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 	return chunk;
 }
 
-void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
+void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 {
 	int pos_x = position.x;
 	int pos_z = position.y;
@@ -34,6 +34,26 @@ void ChunkManager::GenerateChunksCenteredAt(glm::vec2 position)
 		}
 		rx++;
 		rz = 0;
+	}
+
+	for (auto it = chunks.begin(); it != chunks.end(); )
+	{
+		auto* chunk = it->second;
+		// Preserve a couple of chunks outside of view dist
+		// since we're more likely to backtrack to existing locations.
+		bool chunk_out_of_view_dist =
+			chunk->id.x < cx - VIEW_DIST_CHUNKS - 2
+			|| chunk->id.x > cx + VIEW_DIST_CHUNKS + 2
+			|| chunk->id.y < cz - VIEW_DIST_CHUNKS - 2
+			|| chunk->id.y > cz + VIEW_DIST_CHUNKS + 2;
+
+		if (chunk_out_of_view_dist) {
+			delete chunk;
+			it = chunks.erase(it);
+		}
+		else {
+			++it;
+		}
 	}
 
 	if (chunks_to_gen.size() == 0)
@@ -234,7 +254,6 @@ void ChunkManager::QueueChunk(Chunk* chunk)
 			// We want to push to the queue from a thread, so we lock it.
 			std::lock_guard<std::mutex> lock(queue_mutex);
 			// Push the completed chunk to our queue for ProcessChunks to handle.
-			//chunk_queue.push(result);
 			chunks_gpu_queue.push(result);
 		}
 	});
