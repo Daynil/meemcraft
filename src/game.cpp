@@ -45,7 +45,7 @@ void Game::Init()
 	rendering_manager = new RenderingManager(renderer, renderer->display);
 	rendering_manager->Init(camera);
 
-	map_generator = new MapGenerator(rendering_manager);
+	map_generator = new MapGenerator(rendering_manager, 123457);
 	chunk_manager = new ChunkManager(&thread_pool, map_generator);
 
 	//particle_manager = new ParticleManager(
@@ -68,24 +68,10 @@ void Game::LoadLevel(int offset_x, int offset_z)
 {
 	Blocks.clear();
 
-	//chunk_manager->ClearChunks();
-
-	//Timer timer("Genning noise map");
-	//int view_distance = 10;
-	//int chunks_per_side = view_distance * 2 + 1;
-	// Note: map size must correspond to chunk size x (16) times chunks per side
-	//chunk_manager->noise_map = map_generator->GenerateMap(256, 123456);
-	//chunk_manager->noise_map = map_generator->GenerateMap(128, 123456);
-	//chunk_manager->noise_map = map_generator->GenerateMap(Chunk::CHUNK_SIZE_X * chunks_per_side, Chunk::CHUNK_SIZE_X * chunks_per_side, offset_x, offset_z, seed);
-
-	//if (State == DEBUG) {
-	//	timer.Reset("Creating noise texture");
-	//	//map_generator->CreateNoisemapTexture(chunk_manager->noise_map);
-	//}
+	chunk_manager->ClearChunks();
 
 	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
-	//timer.Reset("Starting on chunks");
-	//chunk_manager->QueueChunks();
+
 	chunk_manager->RefreshChunksCenteredAt(glm::vec2(0, 0));
 }
 
@@ -110,10 +96,12 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			int view_distance = 10;
-			int chunks_per_side = view_distance * 2 + 1;
+			//int view_distance = 10;
+			//int chunks_per_side = view_distance * 2 + 1;
 			//LoadLevel(chunks_per_side * Chunk::CHUNK_SIZE_X, chunks_per_side * Chunk::CHUNK_SIZE_Z);
-			LoadLevel(0, chunks_per_side * Chunk::CHUNK_SIZE_Z);
+			//LoadLevel(0, chunks_per_side * Chunk::CHUNK_SIZE_Z);
+			map_generator->Reseed(random_int(1, 123459));
+			LoadLevel(0, 0);
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
 		}
@@ -194,7 +182,7 @@ void Game::Render()
 	}
 
 	if (State == DEBUG && map_generator->texture) {
-		map_generator->DrawNoisemap();
+		map_generator->DrawNoisemap(camera->cameraPos);
 	}
 
 	rendering_manager->Render();

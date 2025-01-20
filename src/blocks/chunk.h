@@ -7,6 +7,9 @@
 #include "resource_manager.h"
 #include "shared.h"
 
+// Forward declaration to avoid circular imports
+class MapGenerator;
+
 // A chunk's ID is its world coordinate.
 // World coordinates are 2d since we take vertical slices, so this is (x, z),
 // though it is accessed as (x, y).
@@ -25,9 +28,11 @@ public:
 
 	BlockInfo blocks[CHUNK_SIZE_X][CHUNK_SIZE_Y][CHUNK_SIZE_Z];
 
+	MapGenerator* map_generator;
+
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
 
-	Chunk(ChunkID id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data);
+	Chunk(ChunkID id, glm::vec3 p_position, MapGenerator* map_generator);
 
 	~Chunk() {
 		delete model;
@@ -36,9 +41,9 @@ public:
 
 	void ChunkTest();
 
-	BlockType GetBlockType(double noise_value, int y);
+	BlockType GetBlockType(int x, int y, int z);
 
-	void GenerateBlocks(std::vector<std::vector<double>>* chunk_map);
+	void GenerateBlocks();
 	void GenerateMesh();
 
 };

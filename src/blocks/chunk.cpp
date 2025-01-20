@@ -3,12 +3,13 @@
 #include <iostream>
 
 #include "util.h"
+#include "map_generation/map_generator.h"
 
-Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data)
+Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, MapGenerator* map_generator) : map_generator(map_generator)
 {
 	id = p_id;
 	position = p_position;
-	GenerateBlocks(chunk_map_data);
+	GenerateBlocks();
 }
 
 void Chunk::ChunkTest()
@@ -62,7 +63,7 @@ void Chunk::ChunkTest()
 	shader = &ResourceManager::GetShader("entity");
 }
 
-BlockType Chunk::GetBlockType(double noise_value, int y)
+BlockType Chunk::GetBlockType(int x, int y, int z)
 {
 	float sea_level_start = 0.5f;
 	float sea_level_end = 0.55f;
@@ -71,9 +72,35 @@ BlockType Chunk::GetBlockType(double noise_value, int y)
 
 	BlockType block = BlockType::AIR;
 
-	int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
+	//int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
+	//auto terrain_height = 100 + noise_value * 20;
+	float terrain_height = 0;
+	float slope = 0;
+	float y_intercept = 0;
 
-	if (y <= area_height) {
+	float spline_1 = 0.3;
+	float spline_2 = 0.6;
+
+	int wx = id.x * CHUNK_SIZE_X;
+	int wz = id.y * CHUNK_SIZE_Z;
+	double noise_value = map_generator->SampleNoise(wx + x, wz + z);
+
+	if (noise_value < spline_1) {
+		slope = (100 - 50) / (spline_1 - -1);
+		y_intercept = 50 - (slope * -1);
+	}
+	else if (noise_value >= spline_1 && noise_value < spline_2) {
+		slope = (150 - 100) / (spline_2 - spline_1);
+		y_intercept = 100 - (slope * spline_1);
+	}
+	else {
+		slope = 0;
+		y_intercept = 150;
+	}
+
+	terrain_height = slope * noise_value + y_intercept;
+
+	if (y < terrain_height) {
 		block = BlockType::GRASS_BLOCK;
 	}
 
@@ -109,14 +136,14 @@ BlockType Chunk::GetBlockType(double noise_value, int y)
 	return block;
 }
 
-void Chunk::GenerateBlocks(std::vector<std::vector<double>>* chunk_map)
+void Chunk::GenerateBlocks()
 {
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
-				const double noise_value = (*chunk_map)[x][z];
+				//const double noise_value = (*chunk_map)[x][z];
 				BlockInfo info;
-				info.type = GetBlockType(noise_value, y);
+				info.type = GetBlockType(x, y, z);
 				info.health = 10;
 				blocks[x][y][z] = info;
 			}

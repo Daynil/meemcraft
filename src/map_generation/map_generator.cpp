@@ -13,7 +13,7 @@
 #include "block_data.h"
 
 
-MapGenerator::MapGenerator(RenderingManager* rendering_manager) : rendering_manager(rendering_manager)
+MapGenerator::MapGenerator(RenderingManager* rendering_manager, unsigned int seed) : rendering_manager(rendering_manager), perlin(seed)
 {
 	// Just a front-facing quad to render the noise map on
 	raw_model = new RawModel(BlockVertices::vertices_front, BlockVertices::texture_coords_symmetrical_face, BlockVertices::indices_face);
@@ -28,52 +28,95 @@ MapGenerator::~MapGenerator()
 		delete texture;
 }
 
-// https://www.redblobgames.com/maps/terrain-from-noise/
+// https://www.youtube.com/watch?v=CSa5O6knuwI
+// https://dawnosaur.substack.com/p/how-minecraft-generates-worlds-you
+// Note:
+// We have to pre-generate a noisemap each time the world offset changes
+// for a given view radius. Sampling perlin at per-point instead of pregenerating
+// is conceptually simpler, but orders of magnitude slower (presumably due to
+// algorithmic optimizations in the implementation).
 std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_z, unsigned int seed)
 {
+	w_offset_x = offset_x;
+	w_offset_z = offset_z;
+
 	std::vector<std::vector<double>> noise_data(size_x, std::vector<double>(size_z));
 
 	const siv::PerlinNoise perlin{ seed };
 
-	// Adjust output value to 0-1 range
-	double max_noise = 0.0;
-	double min_noise = 99.0;
+	// 0.1 - 64
+	double frequency = 0.01;
+	// 1 - 16
+	int octaves = 4;
 
 	for (int x = 0; x < size_x; ++x) {
 		for (int z = 0; z < size_z; ++z) {
-			const double nx = (x + offset_x) / static_cast<double>(size_x) - 0.5;
-			const double ny = (z + offset_z) / static_cast<double>(size_z) - 0.5;
-
-			double e = (1.0f * (perlin.noise2D(1 * nx, 1 * ny) / 2 + 0.5) +
-				0.5f * (perlin.noise2D(2 * nx, 2 * ny) / 2 + 0.5) +
-				0.25f * (perlin.noise2D(4 * nx, 4 * ny) / 2 + 0.5) +
-				0.13f * (perlin.noise2D(8 * nx, 8 * ny) / 2 + 0.5) +
-				0.06f * (perlin.noise2D(16 * nx, 16 * ny) / 2 + 0.5) +
-				0.03f * (perlin.noise2D(32 * nx, 32 * ny) / 2 + 0.5));
-			e = e / (1.0f + 0.5f + 0.25f + 0.13f + 0.06f + 0.03f);
-			e = std::pow(e, 15.0f);
-
-			noise_data[x][z] = e;
-
-			if (e > max_noise)
-				max_noise = e;
-			if (e < min_noise)
-				min_noise = e;
+			noise_data[x][z] = perlin.octave2D_11(
+				(x + offset_x) * frequency, (z + offset_z) * frequency, octaves
+			);
 		}
 	}
 
-	for (int x = 0; x < size_x; ++x) {
-		for (int z = 0; z < size_z; ++z) {
-			const double noise_value = noise_data[x][z];
+	// https://www.redblobgames.com/maps/terrain-from-noise/
 
-			double adj_noise = noise_value - min_noise;
-			adj_noise = adj_noise / max_noise;
+	//// Adjust output value to 0-1 range
+	//double max_noise = 0.0;
+	//double min_noise = 99.0;
 
-			noise_data[x][z] = adj_noise;
-		}
-	}
+	//for (int x = 0; x < size_x; ++x) {
+	//	for (int z = 0; z < size_z; ++z) {
+	//		const double nx = (x + offset_x) / static_cast<double>(size_x) - 0.5;
+	//		const double ny = (z + offset_z) / static_cast<double>(size_z) - 0.5;
 
+	//		double e = (1.0f * (perlin.noise2D(1 * nx, 1 * ny) / 2 + 0.5) +
+	//			0.5f * (perlin.noise2D(2 * nx, 2 * ny) / 2 + 0.5) +
+	//			0.25f * (perlin.noise2D(4 * nx, 4 * ny) / 2 + 0.5) +
+	//			0.13f * (perlin.noise2D(8 * nx, 8 * ny) / 2 + 0.5) +
+	//			0.06f * (perlin.noise2D(16 * nx, 16 * ny) / 2 + 0.5) +
+	//			0.03f * (perlin.noise2D(32 * nx, 32 * ny) / 2 + 0.5));
+	//		e = e / (1.0f + 0.5f + 0.25f + 0.13f + 0.06f + 0.03f);
+	//		e = std::pow(e, 15.0f);
+
+	//		noise_data[x][z] = e;
+
+	//		if (e > max_noise)
+	//			max_noise = e;
+	//		if (e < min_noise)
+	//			min_noise = e;
+	//	}
+	//}
+
+	//for (int x = 0; x < size_x; ++x) {
+	//	for (int z = 0; z < size_z; ++z) {
+	//		const double noise_value = noise_data[x][z];
+
+	//		double adj_noise = noise_value - min_noise;
+	//		adj_noise = adj_noise / max_noise;
+
+	//		noise_data[x][z] = adj_noise;
+	//	}
+	//}
+
+	noisemap_data = noise_data;
 	return noise_data;
+}
+
+void MapGenerator::FollowCamera(glm::vec3 camera_pos)
+{
+	noisemap.position = glm::vec3(camera_pos.x, camera_pos.y, camera_pos.z - 16);
+}
+
+void MapGenerator::Reseed(unsigned int seed)
+{
+	perlin.reseed(seed);
+}
+
+// The concept of offsets is that our noise_data vector always starts at 0,0.
+// If we track the world offset, we can sample from the 0,0 indexed array more easily
+// using world coordinates by just subtracting the world offset.
+double MapGenerator::SampleNoise(int wx, int wz) const
+{
+	return noisemap_data[wx - w_offset_x][wz - w_offset_z];
 }
 
 void MapGenerator::CreateNoisemapTexture(std::vector<std::vector<double>> noisemap)
@@ -106,13 +149,13 @@ void MapGenerator::CreateNoisemapTexture(std::vector<std::vector<double>> noisem
 	texture = new Texture(texture_noise_data.data(), map_dim_size, map_dim_size);
 }
 
-void MapGenerator::DrawNoisemap()
+void MapGenerator::DrawNoisemap(glm::vec3 camera_pos)
 {
 	noisemap = Entity(
 		raw_model,
 		texture,
 		shader,
-		glm::vec3(0, 0, -16),
+		glm::vec3(camera_pos.x, camera_pos.y, camera_pos.z - 30),
 		glm::vec3(0),
 		glm::vec3(10));
 
