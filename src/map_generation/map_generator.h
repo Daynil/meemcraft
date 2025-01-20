@@ -35,13 +35,13 @@ public:
 	MapGenerator(RenderingManager* rendering_manager, unsigned int seed);
 	~MapGenerator();
 
-	std::vector<std::vector<double>> GenerateMap(int size_x, int size_z, int offset_x, int offset_z, unsigned int seed);
+	void GenerateMap(int size_x, int size_z, int offset_x, int offset_z);
 
 	void FollowCamera(glm::vec3 camera_pos);
 
 	void Reseed(unsigned int seed);
 	double SampleNoise(int x, int z) const;
 
-	void CreateNoisemapTexture(std::vector<std::vector<double>> noisemap);
+	void CreateNoisemapTexture();
 	void DrawNoisemap(glm::vec3 camera_pos);
 };

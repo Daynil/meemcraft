@@ -101,8 +101,8 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 	int offset_x = (center_point.x * Chunk::CHUNK_SIZE_X) - (map_size / 2);
 	int offset_z = (center_point.y * Chunk::CHUNK_SIZE_Z) - (map_size / 2);
 
-	noise_map = map_generator->GenerateMap(
-		map_size, map_size, offset_x, offset_z, 123457
+	map_generator->GenerateMap(
+		map_size, map_size, offset_x, offset_z
 	);
 
 	{
@@ -120,24 +120,6 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
 
 	for (auto& chunk_coord_map : chunks_to_gen) {
-		//for (int x = 0; x < Chunk::CHUNK_SIZE_X; x++) {
-		//	for (int z = 0; z < Chunk::CHUNK_SIZE_Z; z++) {
-		//		// Check bounds
-		//		int row_index = chunk_coord_map.relative_coord.x * Chunk::CHUNK_SIZE_X + x;
-		//		if (row_index < 0 || row_index >= noise_map.size()) {
-		//			std::cerr << "Row index out of bounds: " << row_index << std::endl;
-		//			assert(false); // Breaks here during debug mode
-		//		}
-
-		//		int col_index = chunk_coord_map.relative_coord.y * Chunk::CHUNK_SIZE_Z + z;
-		//		if (col_index < 0 || col_index >= noise_map[row_index].size()) {
-		//			std::cerr << "Column index out of bounds: " << col_index << std::endl;
-		//			assert(false); // Breaks here during debug mode
-		//		}
-		//		chunk_map_data[x][z] = noise_map.at(row_index).at(col_index);
-		//	}
-		//}
-
 		local_chunks_to_queue.emplace(
 			chunk_coord_map.world_coord,
 			new Chunk(
@@ -191,7 +173,7 @@ void ChunkManager::ProcessChunks()
 			// We create our noisemaps in a background thread, but OpenGL needs
 			// textures generated on the main thread.
 			// We create one noisemap per batch.
-			map_generator->CreateNoisemapTexture(noise_map);
+			map_generator->CreateNoisemapTexture();
 			noisemap_data_generated = false;
 		}
 	}
@@ -268,7 +250,6 @@ void ChunkManager::ClearChunks()
 	for (auto& p_chunk : chunks) {
 		delete p_chunk.second;
 	}
-	noise_map.clear();
 	chunks.clear();
 }
 

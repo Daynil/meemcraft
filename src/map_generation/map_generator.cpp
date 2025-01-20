@@ -35,14 +35,12 @@ MapGenerator::~MapGenerator()
 // for a given view radius. Sampling perlin at per-point instead of pregenerating
 // is conceptually simpler, but orders of magnitude slower (presumably due to
 // algorithmic optimizations in the implementation).
-std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_z, unsigned int seed)
+void MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_z)
 {
 	w_offset_x = offset_x;
 	w_offset_z = offset_z;
 
 	std::vector<std::vector<double>> noise_data(size_x, std::vector<double>(size_z));
-
-	const siv::PerlinNoise perlin{ seed };
 
 	// 0.1 - 64
 	double frequency = 0.01;
@@ -98,7 +96,6 @@ std::vector<std::vector<double>> MapGenerator::GenerateMap(int size_x, int size_
 	//}
 
 	noisemap_data = noise_data;
-	return noise_data;
 }
 
 void MapGenerator::FollowCamera(glm::vec3 camera_pos)
@@ -119,9 +116,9 @@ double MapGenerator::SampleNoise(int wx, int wz) const
 	return noisemap_data[wx - w_offset_x][wz - w_offset_z];
 }
 
-void MapGenerator::CreateNoisemapTexture(std::vector<std::vector<double>> noisemap)
+void MapGenerator::CreateNoisemapTexture()
 {
-	auto map_dim_size = noisemap[0].size();
+	auto map_dim_size = noisemap_data[0].size();
 
 	// RGB = 3 channels
 	// We use unsigned char because each char is 8 bits, aka 1 byte
@@ -135,7 +132,8 @@ void MapGenerator::CreateNoisemapTexture(std::vector<std::vector<double>> noisem
 		for (int z = 0; z < map_dim_size; z++) {
 			// RGB = 3 channels
 			int texture_index = (z * map_dim_size + x) * 3;
-			const double noise_value = noisemap[x][z];
+			// Compress -1 to 1 -> 0 to 1
+			const double noise_value = (noisemap_data[x][z] + 1) / 2;
 
 			// Noise is 0 - 1, convert to rgb up to 255
 			unsigned char noise_c = static_cast<unsigned char>(noise_value * 255);

@@ -49,7 +49,6 @@ class ChunkManager
 public:
 	static const int VIEW_DIST_CHUNKS = 10;
 
-	std::vector<std::vector<double>> noise_map;
 	// Not thread safe, accessible to main thread only
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks;
 
