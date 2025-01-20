@@ -28,19 +28,18 @@ struct Vec2Comparator {
 struct CoordMap {
 	// Coord of chunk relative to chunks being generated
 	glm::vec2 relative_coord;
-	// Coord of chunk in world
-	ChunkID world_coord;
+	Chunk* chunk;
 
 	bool operator==(const CoordMap& other) const {
-		return world_coord == other.world_coord;
+		return chunk->id == other.chunk->id;
 	}
 
 	bool operator<(const CoordMap& other) const {
-		if (world_coord.x != other.world_coord.x)
-			return world_coord.x < other.world_coord.x;
-		if (world_coord.y != other.world_coord.y)
-			return world_coord.y < other.world_coord.y;
-		return world_coord.x < other.world_coord.x;
+		if (chunk->id.x != other.chunk->id.x)
+			return chunk->id.x < other.chunk->id.x;
+		if (chunk->id.y != other.chunk->id.y)
+			return chunk->id.y < other.chunk->id.y;
+		return chunk->id.x < other.chunk->id.x;
 	}
 };
 

@@ -4,12 +4,12 @@
 
 #include "util.h"
 
-Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data)
-{
-	id = p_id;
-	position = p_position;
-	GenerateBlocks(chunk_map_data);
-}
+//Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data)
+//{
+//	id = p_id;
+//	position = p_position;
+//	GenerateBlocks(chunk_map_data);
+//}
 
 void Chunk::ChunkTest()
 {

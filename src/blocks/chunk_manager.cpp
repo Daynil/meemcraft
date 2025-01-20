@@ -26,9 +26,9 @@ void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 	// World coords
 	for (int wx = cx - VIEW_DIST_CHUNKS; wx < cx + VIEW_DIST_CHUNKS; wx++) {
 		for (int wz = cz - VIEW_DIST_CHUNKS; wz < cz + VIEW_DIST_CHUNKS; wz++) {
-			ChunkID chunk_id = glm::vec2(wx, wz);
-			if (!GetChunkOrNull(chunk_id)) {
-				chunks_to_gen.push_back(CoordMap{ glm::vec2(rx, rz), chunk_id });
+			Chunk* chunk = new Chunk(glm::vec2(wx, wz));
+			if (!GetChunkOrNull(chunk->id)) {
+				chunks_to_gen.push_back(CoordMap{ glm::vec2(rx, rz), chunk });
 			}
 			rz++;
 		}
@@ -48,6 +48,9 @@ void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 			|| chunk->id.y > cz + VIEW_DIST_CHUNKS + 2;
 
 		if (chunk_out_of_view_dist) {
+			// TODO: implement remove filter for queues
+			//chunks_cpu_queue.remove_if([&](Chunk* c) { return c == chunk; });
+			//chunks_gpu_queue.remove_if([&](Chunk* c) { return c == chunk; });
 			delete chunk;
 			it = chunks.erase(it);
 		}
@@ -59,18 +62,32 @@ void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 	if (chunks_to_gen.size() == 0)
 		return;
 
+	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new;
+
+	// TODO: refactor to improve efficiency?
+	for (auto& chunk_map : chunks_to_gen) {
+		auto* chunk = chunk_map.chunk;
+		chunks_to_check_new.emplace(chunk->id, chunk);
+	}
+
+	for (auto& chunk_map : chunks_to_gen) {
+		auto* chunk = chunk_map.chunk;
+		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, chunks_to_check_new, chunks);
+	}
+
 	// We need to remesh chunks adjacent to newly inserted ones
-	// since they may have culled faces where they shouldn't or vice versa
+	// since they may have culled faces where they shouldn't or vice versa.
+	// Note we don't need to get adjacent chunks since existing chunks already have them.
 	std::vector<CoordMap> adjacent_chunks_to_remesh;
 	for (auto& chunk_coord_map : chunks_to_gen) {
-		auto adjacent_chunks = GetAdjacentExistingChunks(chunk_coord_map.world_coord);
+		auto adjacent_chunks = GetAdjacentExistingChunks(chunk_coord_map.chunk->id);
 		for (auto& adjacent_chunk_p : adjacent_chunks) {
 			auto* adjacent_chunk = adjacent_chunk_p.second;
 			if (adjacent_chunk) {
-				auto dist = GetChunkDistance(chunk_coord_map.world_coord, adjacent_chunk->id);
+				auto dist = GetChunkDistance(chunk_coord_map.chunk->id, adjacent_chunk->id);
 				adjacent_chunks_to_remesh.push_back(
 					CoordMap{ glm::vec2(chunk_coord_map.relative_coord.x + dist.x, chunk_coord_map.relative_coord.y + dist.y),
-					adjacent_chunk->id }
+					adjacent_chunk }
 				);
 			}
 		}
@@ -134,25 +151,25 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 			}
 		}
 
+		Chunk* chunk = chunk_coord_map.chunk;
+		chunk->position = glm::vec3(
+			(chunk->id.x * Chunk::CHUNK_SIZE_X),
+			// Shift sea level to y = 0
+			-(Chunk::CHUNK_SIZE_Y / 2),
+			(chunk->id.y * Chunk::CHUNK_SIZE_Z)
+		);
+		chunk->GenerateBlocks(&chunk_map_data);
+
 		local_chunks_to_queue.emplace(
-			chunk_coord_map.world_coord,
-			new Chunk(
-				chunk_coord_map.world_coord,
-				glm::vec3(
-					(chunk_coord_map.world_coord.x * Chunk::CHUNK_SIZE_X),
-					// Shift sea level to y = 0
-					-(Chunk::CHUNK_SIZE_Y / 2),
-					(chunk_coord_map.world_coord.y * Chunk::CHUNK_SIZE_Z)
-				),
-				&chunk_map_data
-			)
+			chunk->id,
+			chunk
 		);
 	}
 
-	for (auto& p_chunk : local_chunks_to_queue) {
-		auto chunk = p_chunk.second;
-		chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, local_chunks_to_queue, chunks);
-	}
+	//for (auto& p_chunk : local_chunks_to_queue) {
+	//	auto chunk = p_chunk.second;
+	//	chunk->adjacent_chunks = GetAdjacentChunks(chunk->id, local_chunks_to_queue, chunks);
+	//}
 
 	{
 		std::unique_lock<std::mutex> lock(queue_mutex);

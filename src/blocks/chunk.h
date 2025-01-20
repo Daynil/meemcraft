@@ -27,7 +27,7 @@ public:
 
 	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
 
-	Chunk(ChunkID id, glm::vec3 p_position, std::vector<std::vector<double>>* chunk_map_data);
+	Chunk(ChunkID id) : id(id) {};
 
 	~Chunk() {
 		delete model;
