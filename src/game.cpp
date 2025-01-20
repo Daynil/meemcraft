@@ -86,8 +86,6 @@ void Game::CheckLastVisibleChunkCoord()
 		last_visible_south_block = last_viz_cz;
 		chunk_manager->RefreshChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.z));
 	}
-
-
 	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
 }
 

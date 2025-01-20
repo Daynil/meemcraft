@@ -113,10 +113,6 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 	int view_distance = 10;
 	int chunks_per_side = view_distance * 2 + 1;
 
-	std::vector<std::vector<double>> chunk_map_data(
-		Chunk::CHUNK_SIZE_X, std::vector<double>(Chunk::CHUNK_SIZE_Z)
-	);
-
 	std::map<ChunkID, Chunk*, Vec2Comparator> local_chunks_to_queue;
 
 	for (auto& chunk_coord_map : chunks_to_gen) {
