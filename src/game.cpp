@@ -46,7 +46,7 @@ void Game::Init()
 	rendering_manager->Init(camera);
 
 	map_generator = new MapGenerator(rendering_manager, 123457);
-	chunk_manager = new ChunkManager(&thread_pool, map_generator);
+	chunk_manager = new ChunkManager(&thread_pool, map_generator, camera);
 
 	//particle_manager = new ParticleManager(
 	//	&ResourceManager::GetRawModel("quad"),

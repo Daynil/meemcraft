@@ -15,6 +15,7 @@
 #include "shared.h"
 #include "util.h"
 #include "map_generation/map_generator.h"
+#include "camera.h"
 
 struct Vec2Comparator {
 	bool operator()(const ChunkID& a, const ChunkID& b) const {
@@ -64,8 +65,9 @@ public:
 	bool noisemap_data_generated = false;
 
 	MapGenerator* map_generator;
+	Camera* camera;
 
-	ChunkManager(ThreadPool* thread_pool, MapGenerator* map_generator) : thread_pool(thread_pool), map_generator(map_generator) {};
+	ChunkManager(ThreadPool* thread_pool, MapGenerator* map_generator, Camera* camera) : thread_pool(thread_pool), map_generator(map_generator), camera(camera) {};
 
 	// 1. Queue up needed chunks and delete those out of view dist
 	void RefreshChunksCenteredAt(glm::vec2 position);
@@ -102,6 +104,8 @@ public:
 
 	// For debugging (regenerate map)
 	void ClearChunks();
+
+	void ClearChunksOutOfView();
 
 	ChunkID GetAdjacentChunkID(ChunkID chunk_id, ChunkDirection::AdjacentChunk direction);
 

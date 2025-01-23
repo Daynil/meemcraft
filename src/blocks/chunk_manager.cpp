@@ -36,26 +36,6 @@ void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 		rz = 0;
 	}
 
-	for (auto it = chunks.begin(); it != chunks.end(); )
-	{
-		auto* chunk = it->second;
-		// Preserve a couple of chunks outside of view dist
-		// since we're more likely to backtrack to existing locations.
-		bool chunk_out_of_view_dist =
-			chunk->id.x < cx - VIEW_DIST_CHUNKS - 2
-			|| chunk->id.x > cx + VIEW_DIST_CHUNKS + 2
-			|| chunk->id.y < cz - VIEW_DIST_CHUNKS - 2
-			|| chunk->id.y > cz + VIEW_DIST_CHUNKS + 2;
-
-		if (chunk_out_of_view_dist) {
-			delete chunk;
-			it = chunks.erase(it);
-		}
-		else {
-			++it;
-		}
-	}
-
 	if (chunks_to_gen.size() == 0)
 		return;
 
@@ -226,6 +206,13 @@ void ChunkManager::ProcessChunks()
 			print("finished batch, batches remaining: " + std::to_string(batches_left));
 			chunks_in_batch_complete = 0;
 			batch_processing = false;
+
+			// Only clear chunks when it is safe to do so - we have no more batches
+			// currently in process. If we clear them while batches are processing, 
+			// we get dangling pointers.
+			if (batches_left == 0) {
+				ClearChunksOutOfView();
+			}
 		}
 	}
 }
@@ -251,6 +238,32 @@ void ChunkManager::ClearChunks()
 		delete p_chunk.second;
 	}
 	chunks.clear();
+}
+
+void ChunkManager::ClearChunksOutOfView()
+{
+	int cx = camera->cameraPos.x / Chunk::CHUNK_SIZE_X;
+	int cz = camera->cameraPos.z / Chunk::CHUNK_SIZE_Z;
+
+	for (auto it = chunks.begin(); it != chunks.end(); )
+	{
+		auto* chunk = it->second;
+		// Preserve a couple of chunks outside of view dist
+		// since we're more likely to backtrack to existing locations.
+		bool chunk_out_of_view_dist =
+			chunk->id.x < cx - VIEW_DIST_CHUNKS - 2
+			|| chunk->id.x > cx + VIEW_DIST_CHUNKS + 2
+			|| chunk->id.y < cz - VIEW_DIST_CHUNKS - 2
+			|| chunk->id.y > cz + VIEW_DIST_CHUNKS + 2;
+
+		if (chunk_out_of_view_dist) {
+			delete chunk;
+			it = chunks.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
 }
 
 std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
