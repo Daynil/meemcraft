@@ -95,8 +95,12 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 	auto& center_point = std::get<0>(point_coord_map);
 	auto& chunks_to_gen = std::get<1>(point_coord_map);
 
-	//auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + Chunk::CHUNK_SIZE_X;
-	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + 1;
+	// This becomes an issue if we have flown well outside of the currently loaded 
+	// area and lots of chunks are queued up.
+	// Make noisemap size bigger than we need - quick to gen, and if we have 
+	// moved much further than the loaded area, still works.
+	// Shouldn't be an issue in the real game with slower movement.
+	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + (Chunk::CHUNK_SIZE_X * 4);
 
 	int offset_x = (center_point.x * Chunk::CHUNK_SIZE_X) - (map_size / 2);
 	int offset_z = (center_point.y * Chunk::CHUNK_SIZE_Z) - (map_size / 2);

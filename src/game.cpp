@@ -84,6 +84,7 @@ void Game::CheckLastVisibleChunkCoord()
 	if (last_viz_cz > last_visible_south_block && first_gen) {
 		//first_gen = false;
 		last_visible_south_block = last_viz_cz;
+		print("New last vis cz" + std::to_string(last_viz_cz));
 		chunk_manager->RefreshChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.z));
 	}
 	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
@@ -135,6 +136,7 @@ void Game::ProcessInput(float dt)
 	if (keyboard_keys[GLFW_KEY_W] || keyboard_keys[GLFW_KEY_UP]) {
 		camera->Move(dt, glm::vec2(0.0f, -1.0f));
 		CheckLastVisibleChunkCoord();
+		//print(std::format("Player pos: {0}, {1}", camera->cameraPos.x, camera->cameraPos.z));
 	}
 	if (keyboard_keys[GLFW_KEY_A] || keyboard_keys[GLFW_KEY_LEFT]) {
 		camera->Move(dt, glm::vec2(-1.0f, 0.0f));
