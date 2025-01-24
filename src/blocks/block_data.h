@@ -14,6 +14,7 @@ enum BlockType {
 	DIRT,
 	SAND,
 	STONE,
+	WATER,
 
 	// Ore
 	COAL_ORE,
@@ -37,6 +38,7 @@ constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
 	"DIRT",
 	"SAND",
 	"STONE",
+	"WATER",
 
 	// Ore
 	"COAL_ORE",

@@ -102,7 +102,6 @@ public:
 
 	void Init();
 
-	bool LevelComplete();
 	void ResetGame();
 	void LoadLevel(int offset_x, int offset_z);
 

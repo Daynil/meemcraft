@@ -27,7 +27,7 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 {
 	float sea_level_start = 0.5f;
 	float sea_level_end = 0.55f;
-	int sea_height = CHUNK_SIZE_Y / 2;
+	int sea_height = CHUNK_SIZE_Y / 3.5;
 	float mountains = 0.7f;
 
 	BlockType block = BlockType::AIR;
@@ -63,6 +63,9 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 	if (y < terrain_height) {
 		block = BlockType::GRASS_BLOCK;
 	}
+	else if (y == sea_height) {
+		block = BlockType::WATER;
+	}
 
 	// Above ground
 	//if (noise_value >= sea_level_start) {
@@ -94,6 +97,12 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 	//}
 
 	return block;
+}
+
+bool Chunk::ShouldRenderFace(BlockType adjacent_block)
+{
+	return adjacent_block == BlockType::AIR
+		|| adjacent_block == BlockType::WATER;
 }
 
 void Chunk::GenerateBlocks()
@@ -147,10 +156,7 @@ void Chunk::GenerateMesh()
 				bool top_block = y == CHUNK_SIZE_Y - 1;
 				if (y < CHUNK_SIZE_Y - 1) {
 					BlockType block_top = blocks[x][y + 1][z].type;
-
-					if (block_top == BlockType::AIR) {
-						top_block = true;
-					}
+					top_block = ShouldRenderFace(block_top);
 				}
 
 				for (int i = 0; i < BlockVertices::BlockFace::FACES_COUNT; i++)
@@ -161,20 +167,14 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::LEFT) {
 						if (x > 0) {
 							BlockType block_left = blocks[x - 1][y][z].type;
-
-							if (block_left == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_left);
 						}
 						// Note: edge of the map will never be visible
 						// so we never render map-edge faces
 						else {
 							if (left_chunk) {
 								auto left_chunk_adjacent_block = left_chunk->blocks[CHUNK_SIZE_X - 1][y][z].type;
-
-								if (left_chunk_adjacent_block == BlockType::AIR) {
-									render_face = true;
-								}
+								render_face = ShouldRenderFace(left_chunk_adjacent_block);
 							}
 						}
 					}
@@ -182,18 +182,12 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::RIGHT) {
 						if (x < CHUNK_SIZE_X - 1) {
 							BlockType block_right = blocks[x + 1][y][z].type;
-
-							if (block_right == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_right);
 						}
 						else {
 							if (right_chunk) {
 								auto right_chunk_adjacent_block = right_chunk->blocks[0][y][z].type;
-
-								if (right_chunk_adjacent_block == BlockType::AIR) {
-									render_face = true;
-								}
+								render_face = ShouldRenderFace(right_chunk_adjacent_block);
 							}
 						}
 					}
@@ -202,19 +196,13 @@ void Chunk::GenerateMesh()
 						// Logic for the front faces of blocks within a chunk
 						if (z < CHUNK_SIZE_Z - 1) {
 							BlockType block_front = blocks[x][y][z + 1].type;
-
-							if (block_front == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_front);
 						}
 						// Logic for front faces of blocks at front-most edge of chunk
 						else {
 							if (front_chunk) {
 								auto front_chunk_adjacent_block = front_chunk->blocks[x][y][0].type;
-
-								if (front_chunk_adjacent_block == BlockType::AIR) {
-									render_face = true;
-								}
+								render_face = ShouldRenderFace(front_chunk_adjacent_block);
 							}
 						}
 					}
@@ -222,41 +210,28 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::BACK) {
 						if (z > 0) {
 							BlockType block_back = blocks[x][y][z - 1].type;
-
-							if (block_back == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_back);
 						}
 						else {
 							if (back_chunk) {
 								auto back_chunk_adjacent_block = back_chunk->blocks[x][y][CHUNK_SIZE_Z - 1].type;
-
-								if (back_chunk_adjacent_block == BlockType::AIR) {
-									render_face = true;
-								}
+								render_face = ShouldRenderFace(back_chunk_adjacent_block);
 							}
 						}
 					}
-
 
 					if (face == BlockVertices::BlockFace::BOTTOM) {
 						// Note: Never render bottom face of bottom of chunk, it's never visible
 						if (y > 0) {
 							BlockType block_bottom = blocks[x][y - 1][z].type;
-
-							if (block_bottom == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_bottom);
 						}
 					}
 
 					if (face == BlockVertices::BlockFace::TOP) {
 						if (y < CHUNK_SIZE_Y - 1) {
 							BlockType block_top = blocks[x][y + 1][z].type;
-
-							if (block_top == BlockType::AIR) {
-								render_face = true;
-							}
+							render_face = ShouldRenderFace(block_top);
 						}
 						else {
 							render_face = true;

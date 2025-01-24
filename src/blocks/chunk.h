@@ -40,6 +40,8 @@ public:
 
 	BlockType GetBlockType(int x, int y, int z);
 
+	bool ShouldRenderFace(BlockType adjacent_block);
+
 	void GenerateBlocks();
 	void GenerateMesh();
 
