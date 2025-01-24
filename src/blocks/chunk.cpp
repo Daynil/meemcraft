@@ -9,58 +9,18 @@ Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, MapGenerator* map_generator) : 
 {
 	id = p_id;
 	position = p_position;
+	model = nullptr;
 	GenerateBlocks();
 }
 
+Chunk::~Chunk() {
+	delete model;
+	adjacent_chunks.clear();
+};
+
 void Chunk::ChunkTest()
 {
-	std::vector<float> vertex_positions;
-	std::vector<float> vertex_texture_coords;
-	std::vector<unsigned int> vertex_indices;
 
-	float texture_atlas_x_unit = ResourceManager::texture_atlas_x_unit;
-
-	BlockType block = BlockType::GRASS_BLOCK;
-	BlockData block_data = ResourceManager::GetBlockData(block);
-
-	std::vector<float> texture_coords = BlockVertices::texture_coords_face(texture_atlas_x_unit, block_data.sides_texture_num);
-
-
-	for (int block_num = 0; block_num < 4; block_num++)
-	{
-		// 1) Determine how many vertices we’ve already placed
-		unsigned int baseIndex = vertex_positions.size() / 3; // each vertex has 3 floats
-
-		// 2) Copy the 4 'left-face' vertices, adding (x, y, z)
-		for (int i = 0; i < 4; i++) {
-			float vx = BlockVertices::vertices_left[i * 3 + 0] + 0;
-			float vy = BlockVertices::vertices_left[i * 3 + 1] + 0;
-			float vz = BlockVertices::vertices_left[i * 3 + 2] + block_num;
-
-			vertex_positions.push_back(vx);
-			vertex_positions.push_back(vy);
-			vertex_positions.push_back(vz);
-		}
-
-		vertex_texture_coords.insert(
-			vertex_texture_coords.end(),
-			texture_coords.begin(),
-			texture_coords.end()
-		);
-
-		vertex_indices.push_back(baseIndex + 0);
-		vertex_indices.push_back(baseIndex + 1);
-		vertex_indices.push_back(baseIndex + 3);
-		vertex_indices.push_back(baseIndex + 3);
-		vertex_indices.push_back(baseIndex + 1);
-		vertex_indices.push_back(baseIndex + 2);
-	}
-
-	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices);
-	rotation = glm::vec3(0);
-	scale = glm::vec3(1);
-	texture = &ResourceManager::GetTexture("block_atlas");
-	shader = &ResourceManager::GetShader("entity");
 }
 
 BlockType Chunk::GetBlockType(int x, int y, int z)

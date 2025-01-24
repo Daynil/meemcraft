@@ -34,10 +34,7 @@ public:
 
 	Chunk(ChunkID id, glm::vec3 p_position, MapGenerator* map_generator);
 
-	~Chunk() {
-		delete model;
-		adjacent_chunks.clear();
-	};
+	~Chunk();
 
 	void ChunkTest();
 

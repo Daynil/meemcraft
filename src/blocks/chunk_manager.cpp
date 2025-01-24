@@ -188,6 +188,14 @@ void ChunkManager::ProcessChunks()
 			lock.unlock();
 
 			chunk->model->LoadToGPU();
+
+			auto it = chunks.find(chunk->id);
+			if (it != chunks.end()) {
+				// Replacing an existing chunk.
+				// Must free the old pointer to avoid memory leaks.
+				delete it->second;
+				it->second = nullptr;
+			}
 			chunks.insert_or_assign(chunk->id, chunk);
 
 			lock.lock();

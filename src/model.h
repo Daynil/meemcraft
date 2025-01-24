@@ -12,4 +12,8 @@ public:
 	Texture* texture;
 
 	Model(RawModel* raw_model, Texture* texture) : raw_model(raw_model), texture(texture) {};
+	~Model() {
+		delete raw_model;
+		delete texture;
+	};
 };

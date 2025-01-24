@@ -144,6 +144,12 @@ void MapGenerator::CreateNoisemapTexture()
 		}
 	}
 
+	// If we already had a texture, we must delete
+	// the old pointer to avoid memory leaks.
+	if (texture) {
+		delete texture;
+		texture = nullptr;
+	}
 	texture = new Texture(texture_noise_data.data(), map_dim_size, map_dim_size);
 }
 
