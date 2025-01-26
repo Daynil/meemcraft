@@ -15,6 +15,7 @@
 #include "controls.h"
 #include "game.h"
 #include "resource_manager.h"
+#include "tests/tests.h"
 
 
 #define USE_GPU_ENGINE 0
@@ -26,8 +27,8 @@ extern "C"
 
 int main(void)
 {
-
-	//return;
+	RunTests();
+	return 0;
 
 	if (!glfwInit())
 		return -1;

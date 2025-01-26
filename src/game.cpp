@@ -18,6 +18,7 @@
 #include "rendering/text_renderer.h"
 #include "map_generation/map_generator.h"
 #include "rendering/rendering_manager.h"
+#include "shared.h"
 
 void Game::Init()
 {
@@ -78,16 +79,77 @@ void Game::LoadLevel(int offset_x, int offset_z)
 bool first_gen = true;
 void Game::CheckLastVisibleChunkCoord()
 {
-	auto last_viz_z = camera->cameraPos.z + (ChunkManager::VIEW_DIST_CHUNKS * Chunk::CHUNK_SIZE_X);
-	int last_viz_cz = last_viz_z / Chunk::CHUNK_SIZE_Z;
+	auto last_viz_z = camera->cameraPos.z + (ChunkManager::VIEW_DIST_CHUNKS * ChunkHelpers::CHUNK_SIZE_X);
+	int last_viz_cz = last_viz_z / ChunkHelpers::CHUNK_SIZE_Z;
 
-	if (last_viz_cz > last_visible_south_block && first_gen) {
-		//first_gen = false;
-		last_visible_south_block = last_viz_cz;
-		print("New last vis cz" + std::to_string(last_viz_cz));
-		chunk_manager->RefreshChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.z));
-	}
+	//if (last_viz_cz > last_visible_south_block && first_gen) {
+	//	//first_gen = false;
+	//	last_visible_south_block = last_viz_cz;
+	//	print("New last vis cz" + std::to_string(last_viz_cz));
+	//	chunk_manager->RefreshChunksCenteredAt(glm::vec2(camera->cameraPos.x, camera->cameraPos.z));
+	//}
 	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
+
+	int chunk_r = ChunkHelpers::CHUNK_SIZE_X / 2;
+
+	int cx;
+	int cz;
+
+	if (camera->cameraPos.x > 0)
+		cx = std::floor(camera->cameraPos.x / ChunkHelpers::CHUNK_SIZE_X);
+	else
+		cx = std::floor(camera->cameraPos.x / ChunkHelpers::CHUNK_SIZE_X) - 1;
+
+	if (camera->cameraPos.z > 0)
+		cz = std::floor(camera->cameraPos.z / ChunkHelpers::CHUNK_SIZE_Z);
+	else
+		cz = std::floor(camera->cameraPos.z / ChunkHelpers::CHUNK_SIZE_Z) - 1;
+
+	//if (std::abs(camera->cameraPos.x) < ChunkHelpers::CHUNK_SIZE_X)
+	//	cx = 0;
+	//else if (camera->cameraPos.x > 0)
+	//	cx = std::ceil((camera->cameraPos.x - chunk_r) / ChunkHelpers::CHUNK_SIZE_X);
+	//else
+	//	cx = std::floor((camera->cameraPos.x + chunk_r) / ChunkHelpers::CHUNK_SIZE_X);
+
+	//if (std::abs(camera->cameraPos.z) < ChunkHelpers::CHUNK_SIZE_Z)
+	//	cz = 0;
+	//else if (camera->cameraPos.z > 0)
+	//	cz = std::ceil((camera->cameraPos.z - chunk_r) / ChunkHelpers::CHUNK_SIZE_Z);
+	//else
+	//	cz = std::floor((camera->cameraPos.z + chunk_r) / ChunkHelpers::CHUNK_SIZE_Z);
+
+	print(std::format("Chunk coord {0}, {1}", cx, cz));
+
+	// TODO: address this case
+	if (cx == 0 || cz == 0)
+		return;
+
+	// The direction away from center of the world (-1 or 1)
+	int cx_dir = (cx > 0) - (cx < 0);
+	int cz_dir = (cz > 0) - (cz < 0);
+	// The starting world block x and z of the chunk's local coordinate system
+	int csx = cx * ChunkHelpers::CHUNK_SIZE_X;
+	int csz = cz * ChunkHelpers::CHUNK_SIZE_Z;
+
+	//int csx = cx > 0 ?
+	//	(chunk_r * cx_dir) + ((cx - 1) * ChunkHelpers::CHUNK_SIZE_X) :
+	//	(chunk_r * cx_dir) + (cx * ChunkHelpers::CHUNK_SIZE_X);
+	//int csz = cz > 0 ?
+	//	(chunk_r * cz_dir) + ((cz - 1) * ChunkHelpers::CHUNK_SIZE_Z) :
+	//	(chunk_r * cz_dir) + (cz * ChunkHelpers::CHUNK_SIZE_Z);
+
+	// The block's chunk-local coordinate
+	int cbx = camera->cameraPos.x - csx;
+	int cbz = camera->cameraPos.z - csz;
+	//int cbx = camera->cameraPos.x > 0 ?
+	//	camera->cameraPos.x - csx :
+	//	camera->cameraPos.x + csx;
+	//int cbz = camera->cameraPos.z > 0 ?
+	//	camera->cameraPos.z + csz :
+	//	camera->cameraPos.z - csz;
+
+	print(std::format("Block in chunk coord {0}, {1}, {2}", cbx, camera->cameraPos.y, cbz));
 }
 
 
@@ -97,8 +159,8 @@ void Game::ProcessInput(float dt)
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
 			//int view_distance = 10;
 			//int chunks_per_side = view_distance * 2 + 1;
-			//LoadLevel(chunks_per_side * Chunk::CHUNK_SIZE_X, chunks_per_side * Chunk::CHUNK_SIZE_Z);
-			//LoadLevel(0, chunks_per_side * Chunk::CHUNK_SIZE_Z);
+			//LoadLevel(chunks_per_side * ChunkHelpers::CHUNK_SIZE_X, chunks_per_side * ChunkHelpers::CHUNK_SIZE_Z);
+			//LoadLevel(0, chunks_per_side * ChunkHelpers::CHUNK_SIZE_Z);
 			map_generator->Reseed(random_int(1, 123459));
 			LoadLevel(0, 0);
 
@@ -151,6 +213,7 @@ void Game::ProcessInput(float dt)
 	// Gamepad controls
 	if (left_stick_x != 0 || left_stick_y != 0) {
 		camera->Move(dt, glm::vec2(left_stick_x, left_stick_y));
+		CheckLastVisibleChunkCoord();
 	}
 
 	if (gamepad_keys[GLFW_GAMEPAD_BUTTON_X])

@@ -5,16 +5,36 @@
 #include "util.h"
 #include "map_generation/map_generator.h"
 
+using namespace ChunkHelpers;
+
 Chunk::Chunk(ChunkID p_id, glm::vec3 p_position, MapGenerator* map_generator) : map_generator(map_generator)
 {
 	id = p_id;
 	position = p_position;
-	model = nullptr;
+
+	opaque_entity = Entity();
+	opaque_entity.position = p_position;
+	opaque_entity.model = nullptr;
+	opaque_entity.rotation = glm::vec3(0);
+	opaque_entity.scale = glm::vec3(1);
+	opaque_entity.texture = &ResourceManager::GetTexture("block_atlas");
+	opaque_entity.shader = &ResourceManager::GetShader("entity");
+
+	transparent_entity = Entity();
+	transparent_entity.position = p_position;
+	transparent_entity.model = nullptr;
+	transparent_entity.is_transparent = true;
+	transparent_entity.rotation = glm::vec3(0);
+	transparent_entity.scale = glm::vec3(1);
+	transparent_entity.texture = &ResourceManager::GetTexture("block_atlas");
+	transparent_entity.shader = &ResourceManager::GetShader("entity");
+
 	GenerateBlocks();
 }
 
 Chunk::~Chunk() {
-	delete model;
+	delete opaque_entity.model;
+	delete transparent_entity.model;
 	adjacent_chunks.clear();
 };
 
@@ -65,6 +85,8 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 	}
 	else if (y == sea_height) {
 		block = BlockType::WATER;
+		if (!has_transparent_blocks)
+			has_transparent_blocks = true;
 	}
 
 	// Above ground
@@ -99,10 +121,21 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 	return block;
 }
 
-bool Chunk::ShouldRenderFace(BlockType adjacent_block)
+bool Chunk::ShouldRenderFace(BlockType block, BlockType adjacent_block)
 {
+	// If the block is transparent, only render faces if adjacent to air.
+	// This makes transparent blocks appear continuous.
+	if (IsTransparentBlock(block)) {
+		return adjacent_block == BlockType::AIR;
+	}
+	// Solid blocks should render if they are near a transparent block to be visible.
 	return adjacent_block == BlockType::AIR
-		|| adjacent_block == BlockType::WATER;
+		|| IsTransparentBlock(adjacent_block);
+}
+
+bool Chunk::IsTransparentBlock(BlockType block)
+{
+	return block == BlockType::WATER;
 }
 
 void Chunk::GenerateBlocks()
@@ -110,7 +143,6 @@ void Chunk::GenerateBlocks()
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
-				//const double noise_value = (*chunk_map)[x][z];
 				BlockInfo info;
 				info.type = GetBlockType(x, y, z);
 				info.health = 10;
@@ -126,20 +158,32 @@ void Chunk::GenerateMesh()
 	std::vector<float> vertex_texture_coords;
 	std::vector<unsigned int> vertex_indices;
 
+	std::vector<float> transparent_vertex_positions;
+	std::vector<float> transparent_vertex_texture_coords;
+	std::vector<unsigned int> transparent_vertex_indices;
+
 	vertex_positions.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 3);
 	vertex_texture_coords.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 2);
 	vertex_indices.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 6);
+
+	if (has_transparent_blocks) {
+		transparent_vertex_positions.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 3);
+		transparent_vertex_texture_coords.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 4 * 2);
+		transparent_vertex_indices.reserve(CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z * 6 * 6);
+	}
 
 	float texture_atlas_x_unit = ResourceManager::texture_atlas_x_unit;
 
 	int total_faces_rendered = 0;
 
-	Chunk* left_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::LEFT);
-	Chunk* right_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::RIGHT);
-	Chunk* front_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::FRONT);
-	Chunk* back_chunk = adjacent_chunks.at(ChunkDirection::AdjacentChunk::BACK);
+	Chunk* left_chunk = adjacent_chunks.at(ChunkHelpers::AdjacentChunk::LEFT);
+	Chunk* right_chunk = adjacent_chunks.at(ChunkHelpers::AdjacentChunk::RIGHT);
+	Chunk* front_chunk = adjacent_chunks.at(ChunkHelpers::AdjacentChunk::FRONT);
+	Chunk* back_chunk = adjacent_chunks.at(ChunkHelpers::AdjacentChunk::BACK);
 
 	//Timer timer("Chunk mesh");
+
+	//print(std::format("{}", blocks[0][0][0].type))
 
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
@@ -156,8 +200,13 @@ void Chunk::GenerateMesh()
 				bool top_block = y == CHUNK_SIZE_Y - 1;
 				if (y < CHUNK_SIZE_Y - 1) {
 					BlockType block_top = blocks[x][y + 1][z].type;
-					top_block = ShouldRenderFace(block_top);
+					top_block = ShouldRenderFace(block, block_top);
 				}
+
+				if (id.x == -8 && id.y == 9 && x == 0 && z == 2 && top_block) {
+					print("Here");
+				}
+
 
 				for (int i = 0; i < BlockVertices::BlockFace::FACES_COUNT; i++)
 				{
@@ -167,14 +216,14 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::LEFT) {
 						if (x > 0) {
 							BlockType block_left = blocks[x - 1][y][z].type;
-							render_face = ShouldRenderFace(block_left);
+							render_face = ShouldRenderFace(block, block_left);
 						}
 						// Note: edge of the map will never be visible
 						// so we never render map-edge faces
 						else {
 							if (left_chunk) {
 								auto left_chunk_adjacent_block = left_chunk->blocks[CHUNK_SIZE_X - 1][y][z].type;
-								render_face = ShouldRenderFace(left_chunk_adjacent_block);
+								render_face = ShouldRenderFace(block, left_chunk_adjacent_block);
 							}
 						}
 					}
@@ -182,12 +231,12 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::RIGHT) {
 						if (x < CHUNK_SIZE_X - 1) {
 							BlockType block_right = blocks[x + 1][y][z].type;
-							render_face = ShouldRenderFace(block_right);
+							render_face = ShouldRenderFace(block, block_right);
 						}
 						else {
 							if (right_chunk) {
 								auto right_chunk_adjacent_block = right_chunk->blocks[0][y][z].type;
-								render_face = ShouldRenderFace(right_chunk_adjacent_block);
+								render_face = ShouldRenderFace(block, right_chunk_adjacent_block);
 							}
 						}
 					}
@@ -196,13 +245,13 @@ void Chunk::GenerateMesh()
 						// Logic for the front faces of blocks within a chunk
 						if (z < CHUNK_SIZE_Z - 1) {
 							BlockType block_front = blocks[x][y][z + 1].type;
-							render_face = ShouldRenderFace(block_front);
+							render_face = ShouldRenderFace(block, block_front);
 						}
 						// Logic for front faces of blocks at front-most edge of chunk
 						else {
 							if (front_chunk) {
 								auto front_chunk_adjacent_block = front_chunk->blocks[x][y][0].type;
-								render_face = ShouldRenderFace(front_chunk_adjacent_block);
+								render_face = ShouldRenderFace(block, front_chunk_adjacent_block);
 							}
 						}
 					}
@@ -210,12 +259,12 @@ void Chunk::GenerateMesh()
 					if (face == BlockVertices::BlockFace::BACK) {
 						if (z > 0) {
 							BlockType block_back = blocks[x][y][z - 1].type;
-							render_face = ShouldRenderFace(block_back);
+							render_face = ShouldRenderFace(block, block_back);
 						}
 						else {
 							if (back_chunk) {
 								auto back_chunk_adjacent_block = back_chunk->blocks[x][y][CHUNK_SIZE_Z - 1].type;
-								render_face = ShouldRenderFace(back_chunk_adjacent_block);
+								render_face = ShouldRenderFace(block, back_chunk_adjacent_block);
 							}
 						}
 					}
@@ -224,14 +273,14 @@ void Chunk::GenerateMesh()
 						// Note: Never render bottom face of bottom of chunk, it's never visible
 						if (y > 0) {
 							BlockType block_bottom = blocks[x][y - 1][z].type;
-							render_face = ShouldRenderFace(block_bottom);
+							render_face = ShouldRenderFace(block, block_bottom);
 						}
 					}
 
 					if (face == BlockVertices::BlockFace::TOP) {
 						if (y < CHUNK_SIZE_Y - 1) {
 							BlockType block_top = blocks[x][y + 1][z].type;
-							render_face = ShouldRenderFace(block_top);
+							render_face = ShouldRenderFace(block, block_top);
 						}
 						else {
 							render_face = true;
@@ -264,23 +313,49 @@ void Chunk::GenerateMesh()
 							float vy = BlockVertices::vertices_face.at(face)[i * 3 + 1] + y;
 							float vz = BlockVertices::vertices_face.at(face)[i * 3 + 2] + z;
 
-							vertex_positions.push_back(vx);
-							vertex_positions.push_back(vy);
-							vertex_positions.push_back(vz);
+
+							if (!IsTransparentBlock(block)) {
+								vertex_positions.push_back(vx);
+								vertex_positions.push_back(vy);
+								vertex_positions.push_back(vz);
+							}
+							else {
+								transparent_vertex_positions.push_back(vx);
+								transparent_vertex_positions.push_back(vy);
+								transparent_vertex_positions.push_back(vz);
+							}
 						}
 
-						vertex_texture_coords.insert(
-							vertex_texture_coords.end(),
-							texture_coords.begin(),
-							texture_coords.end()
-						);
+						if (!IsTransparentBlock(block)) {
+							vertex_texture_coords.insert(
+								vertex_texture_coords.end(),
+								texture_coords.begin(),
+								texture_coords.end()
+							);
 
-						vertex_indices.push_back(baseIndex + 0);
-						vertex_indices.push_back(baseIndex + 1);
-						vertex_indices.push_back(baseIndex + 3);
-						vertex_indices.push_back(baseIndex + 3);
-						vertex_indices.push_back(baseIndex + 1);
-						vertex_indices.push_back(baseIndex + 2);
+							vertex_indices.push_back(baseIndex + 0);
+							vertex_indices.push_back(baseIndex + 1);
+							vertex_indices.push_back(baseIndex + 3);
+							vertex_indices.push_back(baseIndex + 3);
+							vertex_indices.push_back(baseIndex + 1);
+							vertex_indices.push_back(baseIndex + 2);
+						}
+						else {
+							unsigned int base_index_transparent = transparent_vertex_positions.size() / 3;
+
+							transparent_vertex_texture_coords.insert(
+								transparent_vertex_texture_coords.end(),
+								texture_coords.begin(),
+								texture_coords.end()
+							);
+
+							transparent_vertex_indices.push_back(base_index_transparent + 0);
+							transparent_vertex_indices.push_back(base_index_transparent + 1);
+							transparent_vertex_indices.push_back(base_index_transparent + 3);
+							transparent_vertex_indices.push_back(base_index_transparent + 3);
+							transparent_vertex_indices.push_back(base_index_transparent + 1);
+							transparent_vertex_indices.push_back(base_index_transparent + 2);
+						}
 					}
 				}
 			}
@@ -288,9 +363,16 @@ void Chunk::GenerateMesh()
 	}
 	//timer.Stop();
 
-	model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices, true);
-	rotation = glm::vec3(0);
-	scale = glm::vec3(1);
-	texture = &ResourceManager::GetTexture("block_atlas");
-	shader = &ResourceManager::GetShader("entity");
-};
+	opaque_entity.model = new RawModel(vertex_positions, vertex_texture_coords, vertex_indices, true);
+	if (has_transparent_blocks) {
+		transparent_entity.model = new RawModel(transparent_vertex_positions, transparent_vertex_texture_coords, transparent_vertex_indices, true);
+	}
+}
+
+void Chunk::LoadToGPU()
+{
+	opaque_entity.model->LoadToGPU();
+	if (has_transparent_blocks)
+		transparent_entity.model->LoadToGPU();
+}
+

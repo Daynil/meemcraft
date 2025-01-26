@@ -31,6 +31,10 @@ void Renderer::prepare_entity(Entity& entity)
 {
 	entity.shader->activate();
 
+	if (entity.is_transparent) {
+		glDepthMask(GL_FALSE);
+	}
+
 	float aspectRatio = display->displayWidth / display->displayHeight;
 
 	// This directly translates display pixel size to NDC
@@ -50,6 +54,9 @@ void Renderer::cleanup_entity(Entity& entity)
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glBindVertexArray(0);
+	if (entity.is_transparent) {
+		glDepthMask(GL_TRUE);
+	}
 	entity.shader->deactivate();
 }
 
@@ -75,6 +82,10 @@ void Renderer::render_entity(Entity& entity)
 void Renderer::prepare_chunk(Entity& entity)
 {
 	entity.shader->activate();
+
+	if (entity.is_transparent) {
+		glDepthMask(GL_FALSE);
+	}
 
 	float aspectRatio = display->displayWidth / display->displayHeight;
 

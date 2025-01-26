@@ -19,6 +19,8 @@ public:
 	glm::vec3 rotation;
 	glm::vec3 scale;
 
+	bool is_transparent = false;
+
 	Entity() {};
 	Entity(RawModel* pModel, Texture* texture, Shader* shader, glm::vec3 pPosition, glm::vec3 pRotation, glm::vec3 pScale);
 

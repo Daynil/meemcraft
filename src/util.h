@@ -42,6 +42,18 @@ inline void print(std::string text)
 	std::cout << text << std::endl;
 }
 
+template<typename T, typename Predicate>
+inline std::vector<T> filter_vector(const std::vector<T>& input, Predicate predicate)
+{
+	std::vector<T> filtered;
+	for (const auto& item : input) {
+		if (predicate(item))
+			filtered.push_back(item);
+	}
+	return filtered;
+}
+
+
 class FPSCounter
 {
 private:

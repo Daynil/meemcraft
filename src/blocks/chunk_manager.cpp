@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+using namespace ChunkHelpers;
+
 Chunk* ChunkManager::LoadChunk(Chunk* chunk)
 {
 	chunk->GenerateMesh();
@@ -14,8 +16,8 @@ void ChunkManager::RefreshChunksCenteredAt(glm::vec2 position)
 	int pos_x = position.x;
 	int pos_z = position.y;
 
-	int cx = pos_x / Chunk::CHUNK_SIZE_X;
-	int cz = pos_z / Chunk::CHUNK_SIZE_Z;
+	int cx = pos_x / CHUNK_SIZE_X;
+	int cz = pos_z / CHUNK_SIZE_Z;
 
 	std::vector<CoordMap> chunks_to_gen;
 
@@ -80,10 +82,10 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 	// Make noisemap size bigger than we need - quick to gen, and if we have 
 	// moved much further than the loaded area, still works.
 	// Shouldn't be an issue in the real game with slower movement.
-	auto map_size = Chunk::CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + (Chunk::CHUNK_SIZE_X * 4);
+	auto map_size = CHUNK_SIZE_X * VIEW_DIST_CHUNKS * 2 + (CHUNK_SIZE_X * 4);
 
-	int offset_x = (center_point.x * Chunk::CHUNK_SIZE_X) - (map_size / 2);
-	int offset_z = (center_point.y * Chunk::CHUNK_SIZE_Z) - (map_size / 2);
+	int offset_x = (center_point.x * CHUNK_SIZE_X) - (map_size / 2);
+	int offset_z = (center_point.y * CHUNK_SIZE_Z) - (map_size / 2);
 
 	map_generator->GenerateMap(
 		map_size, map_size, offset_x, offset_z
@@ -105,10 +107,10 @@ void ChunkManager::CreateInitialChunkData(std::tuple<glm::vec2, std::vector<Coor
 			new Chunk(
 				chunk_coord_map.world_coord,
 				glm::vec3(
-					(chunk_coord_map.world_coord.x * Chunk::CHUNK_SIZE_X),
+					(chunk_coord_map.world_coord.x * CHUNK_SIZE_X),
 					// Shift sea level to y = 0
-					-(Chunk::CHUNK_SIZE_Y / 2),
-					(chunk_coord_map.world_coord.y * Chunk::CHUNK_SIZE_Z)
+					-(CHUNK_SIZE_Y / 2),
+					(chunk_coord_map.world_coord.y * CHUNK_SIZE_Z)
 				),
 				map_generator
 			)
@@ -187,7 +189,7 @@ void ChunkManager::ProcessChunks()
 			chunks_gpu_queue.pop();
 			lock.unlock();
 
-			chunk->model->LoadToGPU();
+			chunk->LoadToGPU();
 
 			auto it = chunks.find(chunk->id);
 			if (it != chunks.end()) {
@@ -250,8 +252,8 @@ void ChunkManager::ClearChunks()
 
 void ChunkManager::ClearChunksOutOfView()
 {
-	int cx = camera->cameraPos.x / Chunk::CHUNK_SIZE_X;
-	int cz = camera->cameraPos.z / Chunk::CHUNK_SIZE_Z;
+	int cx = camera->cameraPos.x / CHUNK_SIZE_X;
+	int cz = camera->cameraPos.z / CHUNK_SIZE_Z;
 
 	for (auto it = chunks.begin(); it != chunks.end(); )
 	{
@@ -274,12 +276,12 @@ void ChunkManager::ClearChunksOutOfView()
 	}
 }
 
-std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
+std::map<ChunkHelpers::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
 	ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
 	std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_existing
 )
 {
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
+	std::map<ChunkHelpers::AdjacentChunk, Chunk*> adjacent_chunks;
 
 	auto get_chunk_or_null = [chunks_to_check_new, chunks_to_check_existing](
 		const glm::vec2& coord) -> Chunk* {
@@ -294,9 +296,9 @@ std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
 			return it_new->second;
 	};
 
-	for (int i = 0; i < ChunkDirection::AdjacentChunk::COUNT; i++)
+	for (int i = 0; i < ChunkHelpers::AdjacentChunk::COUNT; i++)
 	{
-		ChunkDirection::AdjacentChunk dir = (ChunkDirection::AdjacentChunk)i;
+		ChunkHelpers::AdjacentChunk dir = (ChunkHelpers::AdjacentChunk)i;
 		adjacent_chunks.emplace(
 			dir,
 			get_chunk_or_null(GetAdjacentChunkID(chunk_id, dir))
@@ -306,13 +308,13 @@ std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentChunks(
 	return adjacent_chunks;
 }
 
-std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentExistingChunks(ChunkID chunk_id)
+std::map<ChunkHelpers::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentExistingChunks(ChunkID chunk_id)
 {
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
+	std::map<ChunkHelpers::AdjacentChunk, Chunk*> adjacent_chunks;
 
-	for (int i = 0; i < ChunkDirection::AdjacentChunk::COUNT; i++)
+	for (int i = 0; i < ChunkHelpers::AdjacentChunk::COUNT; i++)
 	{
-		ChunkDirection::AdjacentChunk dir = (ChunkDirection::AdjacentChunk)i;
+		ChunkHelpers::AdjacentChunk dir = (ChunkHelpers::AdjacentChunk)i;
 		adjacent_chunks.emplace(
 			dir,
 			GetChunkOrNull(GetAdjacentChunkID(chunk_id, dir))
@@ -322,17 +324,17 @@ std::map<ChunkDirection::AdjacentChunk, Chunk*> ChunkManager::GetAdjacentExistin
 	return adjacent_chunks;
 }
 
-ChunkID ChunkManager::GetAdjacentChunkID(ChunkID chunk_id, ChunkDirection::AdjacentChunk direction)
+ChunkID ChunkManager::GetAdjacentChunkID(ChunkID chunk_id, ChunkHelpers::AdjacentChunk direction)
 {
 	switch (direction)
 	{
-	case ChunkDirection::FRONT:
+	case ChunkHelpers::FRONT:
 		return glm::vec2(chunk_id.x, chunk_id.y + 1);
-	case ChunkDirection::BACK:
+	case ChunkHelpers::BACK:
 		return glm::vec2(chunk_id.x, chunk_id.y - 1);
-	case ChunkDirection::LEFT:
+	case ChunkHelpers::LEFT:
 		return glm::vec2(chunk_id.x - 1, chunk_id.y);
-	case ChunkDirection::RIGHT:
+	case ChunkHelpers::RIGHT:
 		return glm::vec2(chunk_id.x + 1, chunk_id.y);
 	default:
 		break;

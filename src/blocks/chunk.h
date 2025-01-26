@@ -15,22 +15,24 @@ class MapGenerator;
 // though it is accessed as (x, y).
 using ChunkID = glm::vec2;
 
-class Chunk : public Entity
+class Chunk
 {
 public:
 	ChunkID id;
 
+	glm::vec3 position;
+	bool has_transparent_blocks = false;
+
+	Entity opaque_entity;
+	Entity transparent_entity;
+
 	bool should_render = false;
 
-	static const int CHUNK_SIZE_X = 16;
-	static const int CHUNK_SIZE_Y = 256;
-	static const int CHUNK_SIZE_Z = 16;
-
-	BlockInfo blocks[CHUNK_SIZE_X][CHUNK_SIZE_Y][CHUNK_SIZE_Z];
+	BlockInfo blocks[ChunkHelpers::CHUNK_SIZE_X][ChunkHelpers::CHUNK_SIZE_Y][ChunkHelpers::CHUNK_SIZE_Z];
 
 	MapGenerator* map_generator;
 
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> adjacent_chunks;
+	std::map<ChunkHelpers::AdjacentChunk, Chunk*> adjacent_chunks;
 
 	Chunk(ChunkID id, glm::vec3 p_position, MapGenerator* map_generator);
 
@@ -40,9 +42,11 @@ public:
 
 	BlockType GetBlockType(int x, int y, int z);
 
-	bool ShouldRenderFace(BlockType adjacent_block);
+	bool ShouldRenderFace(BlockType block, BlockType adjacent_block);
+	bool IsTransparentBlock(BlockType block);
 
 	void GenerateBlocks();
 	void GenerateMesh();
+	void LoadToGPU();
 
 };

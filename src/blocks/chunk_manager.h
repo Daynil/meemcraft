@@ -107,12 +107,12 @@ public:
 
 	void ClearChunksOutOfView();
 
-	ChunkID GetAdjacentChunkID(ChunkID chunk_id, ChunkDirection::AdjacentChunk direction);
+	ChunkID GetAdjacentChunkID(ChunkID chunk_id, ChunkHelpers::AdjacentChunk direction);
 
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
+	std::map<ChunkHelpers::AdjacentChunk, Chunk*> GetAdjacentChunks(ChunkID chunk_id, std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_new,
 		std::map<ChunkID, Chunk*, Vec2Comparator> chunks_to_check_existing);
 
-	std::map<ChunkDirection::AdjacentChunk, Chunk*> GetAdjacentExistingChunks(ChunkID chunk);
+	std::map<ChunkHelpers::AdjacentChunk, Chunk*> GetAdjacentExistingChunks(ChunkID chunk);
 
 	glm::vec2 GetChunkDistance(ChunkID chunk_id, ChunkID other_id);
 
