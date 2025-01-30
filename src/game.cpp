@@ -67,11 +67,23 @@ void Game::ResetGame()
 
 void Game::LoadLevel(int offset_x, int offset_z)
 {
-	Blocks.clear();
+	//Blocks.clear();
 
 	chunk_manager->ClearChunks();
 
-	//Blocks.push_back(Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+	//Blocks.push_back(new Block(BlockType::GRASS_BLOCK, glm::vec3(0, 0, -2)));
+	Blocks.push_back(new Block(BlockType::SELECTED, glm::vec3(0, 0, 13)));
+
+	auto t = ChunkHelpers::ChunkLocalToWorldCoord(
+		glm::vec3(-9, 0, 9), glm::vec3(0, 73, 13)
+	);
+
+	print(std::format("Test block world coord: {0}, {1}, {2}", t.x, t.y, t.z));
+	//id.x == -10 && id.y == 9 && x == 15 && z == 12 && y == 73
+	Blocks.push_back(new Block(
+		BlockType::SELECTED,
+		glm::vec3(t.x, t.y - 55, t.z)
+	));
 
 	chunk_manager->RefreshChunksCenteredAt(glm::vec2(0, 0));
 }
@@ -90,66 +102,11 @@ void Game::CheckLastVisibleChunkCoord()
 	//}
 	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
 
-	int chunk_r = ChunkHelpers::CHUNK_SIZE_X / 2;
+	auto chunk_coord = ChunkHelpers::WorldCoordToChunkCoord(camera->cameraPos);
+	print(std::format("Chunk world coord {0}", vec_to_string(chunk_coord)));
 
-	int cx;
-	int cz;
-
-	if (camera->cameraPos.x > 0)
-		cx = std::floor(camera->cameraPos.x / ChunkHelpers::CHUNK_SIZE_X);
-	else
-		cx = std::floor(camera->cameraPos.x / ChunkHelpers::CHUNK_SIZE_X) - 1;
-
-	if (camera->cameraPos.z > 0)
-		cz = std::floor(camera->cameraPos.z / ChunkHelpers::CHUNK_SIZE_Z);
-	else
-		cz = std::floor(camera->cameraPos.z / ChunkHelpers::CHUNK_SIZE_Z) - 1;
-
-	//if (std::abs(camera->cameraPos.x) < ChunkHelpers::CHUNK_SIZE_X)
-	//	cx = 0;
-	//else if (camera->cameraPos.x > 0)
-	//	cx = std::ceil((camera->cameraPos.x - chunk_r) / ChunkHelpers::CHUNK_SIZE_X);
-	//else
-	//	cx = std::floor((camera->cameraPos.x + chunk_r) / ChunkHelpers::CHUNK_SIZE_X);
-
-	//if (std::abs(camera->cameraPos.z) < ChunkHelpers::CHUNK_SIZE_Z)
-	//	cz = 0;
-	//else if (camera->cameraPos.z > 0)
-	//	cz = std::ceil((camera->cameraPos.z - chunk_r) / ChunkHelpers::CHUNK_SIZE_Z);
-	//else
-	//	cz = std::floor((camera->cameraPos.z + chunk_r) / ChunkHelpers::CHUNK_SIZE_Z);
-
-	print(std::format("Chunk coord {0}, {1}", cx, cz));
-
-	// TODO: address this case
-	if (cx == 0 || cz == 0)
-		return;
-
-	// The direction away from center of the world (-1 or 1)
-	int cx_dir = (cx > 0) - (cx < 0);
-	int cz_dir = (cz > 0) - (cz < 0);
-	// The starting world block x and z of the chunk's local coordinate system
-	int csx = cx * ChunkHelpers::CHUNK_SIZE_X;
-	int csz = cz * ChunkHelpers::CHUNK_SIZE_Z;
-
-	//int csx = cx > 0 ?
-	//	(chunk_r * cx_dir) + ((cx - 1) * ChunkHelpers::CHUNK_SIZE_X) :
-	//	(chunk_r * cx_dir) + (cx * ChunkHelpers::CHUNK_SIZE_X);
-	//int csz = cz > 0 ?
-	//	(chunk_r * cz_dir) + ((cz - 1) * ChunkHelpers::CHUNK_SIZE_Z) :
-	//	(chunk_r * cz_dir) + (cz * ChunkHelpers::CHUNK_SIZE_Z);
-
-	// The block's chunk-local coordinate
-	int cbx = camera->cameraPos.x - csx;
-	int cbz = camera->cameraPos.z - csz;
-	//int cbx = camera->cameraPos.x > 0 ?
-	//	camera->cameraPos.x - csx :
-	//	camera->cameraPos.x + csx;
-	//int cbz = camera->cameraPos.z > 0 ?
-	//	camera->cameraPos.z + csz :
-	//	camera->cameraPos.z - csz;
-
-	print(std::format("Block in chunk coord {0}, {1}, {2}", cbx, camera->cameraPos.y, cbz));
+	auto chunk_local_coord = ChunkHelpers::WorldCoordToChunkLocal(camera->cameraPos);
+	print(std::format("Block in chunk coord {0}", vec_to_string(chunk_local_coord)));
 }
 
 
@@ -236,7 +193,7 @@ void Game::Render()
 {
 	for (auto& block : Blocks)
 	{
-		rendering_manager->ProcessBlock(&block);
+		rendering_manager->ProcessBlock(block);
 	}
 
 	for (auto& p_chunk : chunk_manager->chunks)

@@ -42,6 +42,11 @@ inline void print(std::string text)
 	std::cout << text << std::endl;
 }
 
+inline std::string vec_to_string(glm::vec3 vec)
+{
+	return std::format("{0}, {1}, {2}", vec.x, vec.y, vec.z);
+}
+
 template<typename T, typename Predicate>
 inline std::vector<T> filter_vector(const std::vector<T>& input, Predicate predicate)
 {

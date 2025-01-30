@@ -9,6 +9,9 @@ enum BlockType {
 	// AKA no block
 	AIR,
 
+	// Selection highlight
+	SELECTED,
+
 	// Environmental
 	GRASS_BLOCK,
 	DIRT,
@@ -32,6 +35,7 @@ enum BlockType {
 
 constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
 	"AIR",
+	"SELECTED",
 
 	// Environmental
 	"GRASS_BLOCK",

@@ -144,6 +144,10 @@ void Chunk::GenerateBlocks()
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
 				BlockInfo info;
+				//glm::vec3(-9, 0, 9), glm::vec3(0, 73, 13)
+				if (id.x == -9 && id.y == 9 && x == 0 && y == 73 && z == 13) {
+					print("Here");
+				}
 				info.type = GetBlockType(x, y, z);
 				info.health = 10;
 				blocks[x][y][z] = info;
@@ -183,8 +187,6 @@ void Chunk::GenerateMesh()
 
 	//Timer timer("Chunk mesh");
 
-	//print(std::format("{}", blocks[0][0][0].type))
-
 	for (int x = 0; x < CHUNK_SIZE_X; x++) {
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
@@ -203,7 +205,12 @@ void Chunk::GenerateMesh()
 					top_block = ShouldRenderFace(block, block_top);
 				}
 
-				if (id.x == -8 && id.y == 9 && x == 0 && z == 2 && top_block) {
+				// TODO: This should be the correct coord
+				// do a few more tests in debug mode here to make sure it really is 
+				// (make sure various blocks around it match what we expect in debugger)
+				// When confirmed, we need to figure out why it's not rendering the top face because
+				// it has render_face = true correctly and vertices seem to get added correctly.
+				if (id.x == -9 && id.y == 9 && x == 0 && y == 73 && z == 13) {
 					print("Here");
 				}
 
@@ -296,6 +303,8 @@ void Chunk::GenerateMesh()
 							texture_coords = BlockVertices::texture_coords_face(texture_atlas_x_unit, block_data.bottom_texture_num);
 						}
 						else {
+							// Basically if it's not the top block, the side textures of a non-symmetrical block like grass
+							// should be just dirt, aka the bottom texture, else you'd have grass on the sides going all the way down.
 							if (top_block) {
 								texture_coords = BlockVertices::texture_coords_face(texture_atlas_x_unit, block_data.sides_texture_num);
 							}

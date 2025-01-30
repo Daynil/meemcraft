@@ -51,7 +51,7 @@ public:
 	TextRenderer* text_renderer;
 	RenderingManager* rendering_manager;
 
-	std::vector<Block> Blocks;
+	std::vector<Block*> Blocks;
 
 	//Player* player;
 	Camera* camera;

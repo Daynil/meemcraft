@@ -15,6 +15,7 @@ public:
 	float FAR_PLANE = 1000.0f;
 
 	float speed = 50.0f;
+	//float speed = 5.0f;
 	float dead_zone = 0.1f;
 
 	Camera();

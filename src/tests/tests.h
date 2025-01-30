@@ -37,7 +37,7 @@ inline void Assert(
 
 inline void RunTests()
 {
-	bool print_success = true;
+	bool print_success = false;
 	// Chunk local to world coords
 	//auto actual = ChunkHelpers::ChunkLocalToWorldCoord(glm::vec3(-2, 0, 0), glm::vec3(13, 0, 10));
 	//auto expected = glm::vec3(-19, 0, 10);

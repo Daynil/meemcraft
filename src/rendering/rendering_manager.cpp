@@ -19,6 +19,11 @@ void RenderingManager::Render()
 		auto type = block_group.first;
 		auto& blocks = block_group.second;
 
+		// Render opaque only in first pass
+		if (type == BlockType::WATER || type == BlockType::SELECTED) {
+			continue;
+		}
+
 		for (auto it = blocks.begin(); it != blocks.end(); ++it) {
 			auto block = *it;
 			if (it == blocks.begin()) {
@@ -73,6 +78,30 @@ void RenderingManager::Render()
 		}
 	}
 
+	for (auto& block_group : block_groups) {
+		auto type = block_group.first;
+		auto& blocks = block_group.second;
+
+		// Render transparent only in second pass
+		if (type != BlockType::WATER && type != BlockType::SELECTED) {
+			continue;
+		}
+
+		for (auto it = blocks.begin(); it != blocks.end(); ++it) {
+			auto block = *it;
+			if (it == blocks.begin()) {
+				renderer->prepare_entity(*block);
+			}
+
+			// Per-entity functions
+			renderer->render_entity(*block);
+
+			// Functions shared by whole group
+			if (std::next(it) == blocks.end()) {
+				renderer->cleanup_entity(*block);
+			}
+		}
+	}
 
 	for (const auto& entity : entities) {
 		renderer->prepare_entity(*entity);

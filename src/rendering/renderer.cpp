@@ -45,8 +45,8 @@ void Renderer::prepare_entity(Entity& entity)
 	view = glm::lookAt(camera->cameraPos, camera->cameraPos + camera->cameraFront, camera->cameraUp);
 	entity.shader->setMat4("view", glm::value_ptr(view));
 
-	bind_vertex_data(entity);
 	bind_texture(entity);
+	bind_vertex_data(entity);
 }
 
 void Renderer::cleanup_entity(Entity& entity)

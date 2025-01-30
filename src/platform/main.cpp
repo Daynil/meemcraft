@@ -28,7 +28,8 @@ extern "C"
 int main(void)
 {
 	RunTests();
-	return 0;
+	// If we just want a test run without spinning up the UI, we can uncomment this
+	//return 0;
 
 	if (!glfwInit())
 		return -1;
