@@ -102,11 +102,11 @@ void Game::CheckLastVisibleChunkCoord()
 	//}
 	//print(std::format("Last visible chunk world z coord: {0}", last_viz_cz));
 
-	auto chunk_coord = ChunkHelpers::WorldCoordToChunkCoord(camera->cameraPos);
-	print(std::format("Chunk world coord {0}", vec_to_string(chunk_coord)));
+	//auto chunk_coord = ChunkHelpers::WorldCoordToChunkCoord(camera->cameraPos);
+	//print(std::format("Chunk world coord {0}", vec_to_string(chunk_coord)));
 
-	auto chunk_local_coord = ChunkHelpers::WorldCoordToChunkLocal(camera->cameraPos);
-	print(std::format("Block in chunk coord {0}", vec_to_string(chunk_local_coord)));
+	//auto chunk_local_coord = ChunkHelpers::WorldCoordToChunkLocal(camera->cameraPos);
+	//print(std::format("Block in chunk coord {0}", vec_to_string(chunk_local_coord)));
 }
 
 
@@ -114,14 +114,33 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			//int view_distance = 10;
-			//int chunks_per_side = view_distance * 2 + 1;
-			//LoadLevel(chunks_per_side * ChunkHelpers::CHUNK_SIZE_X, chunks_per_side * ChunkHelpers::CHUNK_SIZE_Z);
-			//LoadLevel(0, chunks_per_side * ChunkHelpers::CHUNK_SIZE_Z);
 			map_generator->Reseed(random_int(1, 123459));
 			LoadLevel(0, 0);
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;
+		}
+
+		if (keyboard_keys[GLFW_KEY_SPACE] && !keyboard_keys_processed[GLFW_KEY_SPACE]) {
+			auto world = glm::vec3(int(camera->cameraPos.x), int(camera->cameraPos.y), int(camera->cameraPos.z));
+			auto chunk = ChunkHelpers::WorldCoordToChunkCoord(world);
+			auto local = ChunkHelpers::WorldCoordToChunkLocal(world);
+
+			print(std::format("Placing selection at world: {0}", vec_to_string(world)));
+			print(std::format("Placing selection at chunk: {0}", vec_to_string(chunk)));
+			print(std::format("Placing selection at local: {0}", vec_to_string(local)));
+			//id.x == -10 && id.y == 9 && x == 15 && z == 12 && y == 73
+			Blocks.push_back(new Block(
+				BlockType::SELECTED,
+				world
+			));
+
+			keyboard_keys_processed[GLFW_KEY_SPACE] = true;
+		}
+
+		if (keyboard_keys[GLFW_KEY_C] && !keyboard_keys_processed[GLFW_KEY_C]) {
+			Blocks.clear();
+
+			keyboard_keys_processed[GLFW_KEY_C] = true;
 		}
 	}
 

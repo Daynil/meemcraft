@@ -9,6 +9,8 @@
 #include <iostream>
 #include <format>
 
+#include <glm/glm.hpp>
+
 inline int random_int(int from, int to)
 {
 	std::random_device rd;  // Seed generator

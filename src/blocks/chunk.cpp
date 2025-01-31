@@ -315,6 +315,7 @@ void Chunk::GenerateMesh()
 
 						// 1) Determine how many vertices we’ve already placed
 						unsigned int baseIndex = vertex_positions.size() / 3; // each vertex has 3 floats
+						unsigned int base_index_transparent = transparent_vertex_positions.size() / 3;
 
 						// 2) Copy the 4 face vertices, adding (x, y, z)
 						for (int i = 0; i < 4; i++) {
@@ -350,8 +351,6 @@ void Chunk::GenerateMesh()
 							vertex_indices.push_back(baseIndex + 2);
 						}
 						else {
-							unsigned int base_index_transparent = transparent_vertex_positions.size() / 3;
-
 							transparent_vertex_texture_coords.insert(
 								transparent_vertex_texture_coords.end(),
 								texture_coords.begin(),
