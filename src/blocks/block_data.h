@@ -57,6 +57,7 @@ constexpr std::array<const char*, BlockType::BLOCK_COUNT> BlockTypeString = {
 
 // Compile-time data we extract based on block texture files
 struct BlockData {
+	BlockType type;
 	// Whether all 6 sides use the same texture
 	bool symmetrical;
 

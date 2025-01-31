@@ -43,7 +43,6 @@ public:
 	BlockType GetBlockType(int x, int y, int z);
 
 	bool ShouldRenderFace(BlockType block, BlockType adjacent_block);
-	bool IsTransparentBlock(BlockType block);
 
 	void GenerateBlocks();
 	void GenerateMesh();

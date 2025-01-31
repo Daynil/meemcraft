@@ -125,17 +125,12 @@ bool Chunk::ShouldRenderFace(BlockType block, BlockType adjacent_block)
 {
 	// If the block is transparent, only render faces if adjacent to air.
 	// This makes transparent blocks appear continuous.
-	if (IsTransparentBlock(block)) {
+	if (ChunkHelpers::IsTransparent(block)) {
 		return adjacent_block == BlockType::AIR;
 	}
 	// Solid blocks should render if they are near a transparent block to be visible.
 	return adjacent_block == BlockType::AIR
-		|| IsTransparentBlock(adjacent_block);
-}
-
-bool Chunk::IsTransparentBlock(BlockType block)
-{
-	return block == BlockType::WATER;
+		|| ChunkHelpers::IsTransparent(adjacent_block);
 }
 
 void Chunk::GenerateBlocks()
@@ -144,10 +139,6 @@ void Chunk::GenerateBlocks()
 		for (int y = 0; y < CHUNK_SIZE_Y; y++) {
 			for (int z = 0; z < CHUNK_SIZE_Z; z++) {
 				BlockInfo info;
-				//glm::vec3(-9, 0, 9), glm::vec3(0, 73, 13)
-				if (id.x == -9 && id.y == 9 && x == 0 && y == 73 && z == 13) {
-					print("Here");
-				}
 				info.type = GetBlockType(x, y, z);
 				info.health = 10;
 				blocks[x][y][z] = info;
@@ -204,16 +195,6 @@ void Chunk::GenerateMesh()
 					BlockType block_top = blocks[x][y + 1][z].type;
 					top_block = ShouldRenderFace(block, block_top);
 				}
-
-				// TODO: This should be the correct coord
-				// do a few more tests in debug mode here to make sure it really is 
-				// (make sure various blocks around it match what we expect in debugger)
-				// When confirmed, we need to figure out why it's not rendering the top face because
-				// it has render_face = true correctly and vertices seem to get added correctly.
-				if (id.x == -9 && id.y == 9 && x == 0 && y == 73 && z == 13) {
-					print("Here");
-				}
-
 
 				for (int i = 0; i < BlockVertices::BlockFace::FACES_COUNT; i++)
 				{
@@ -324,7 +305,7 @@ void Chunk::GenerateMesh()
 							float vz = BlockVertices::vertices_face.at(face)[i * 3 + 2] + z;
 
 
-							if (!IsTransparentBlock(block)) {
+							if (!ChunkHelpers::IsTransparent(block)) {
 								vertex_positions.push_back(vx);
 								vertex_positions.push_back(vy);
 								vertex_positions.push_back(vz);
@@ -336,7 +317,7 @@ void Chunk::GenerateMesh()
 							}
 						}
 
-						if (!IsTransparentBlock(block)) {
+						if (!ChunkHelpers::IsTransparent(block)) {
 							vertex_texture_coords.insert(
 								vertex_texture_coords.end(),
 								texture_coords.begin(),

@@ -1,6 +1,7 @@
 #include "block_data.h"
 
 #include <filesystem>
+#include <unordered_set>
 
 #include "resource_manager.h"
 
@@ -16,6 +17,8 @@ void BlockLoader::LoadBlocks()
 	{
 		BlockType block_type = (BlockType)i;
 		BlockData data;
+
+		data.type = block_type;
 
 		// Skip all model stuff for air
 		if (block_type == BlockType::AIR) {

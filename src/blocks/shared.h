@@ -77,4 +77,19 @@ namespace ChunkHelpers
 
 		return block_world_coord;
 	};
+
+	inline bool IsTransparent(BlockType block)
+	{
+		switch (block)
+		{
+		case AIR:
+			return true;
+		case SELECTED:
+			return true;
+		case WATER:
+			return true;
+		default:
+			return false;
+		}
+	}
 };
