@@ -87,6 +87,11 @@ void RenderingManager::Render()
 			continue;
 		}
 
+		// Allow selection blocks to be rendered on top of any block.
+		if (type == BlockType::SELECTED) {
+			glDisable(GL_DEPTH_TEST);
+		}
+
 		for (auto it = blocks.begin(); it != blocks.end(); ++it) {
 			auto block = *it;
 			if (it == blocks.begin()) {
@@ -99,6 +104,10 @@ void RenderingManager::Render()
 			// Functions shared by whole group
 			if (std::next(it) == blocks.end()) {
 				renderer->cleanup_entity(*block);
+			}
+
+			if (type == BlockType::SELECTED) {
+				glEnable(GL_DEPTH_TEST);
 			}
 		}
 	}
