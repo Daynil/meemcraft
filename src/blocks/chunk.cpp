@@ -215,8 +215,7 @@ void Chunk::GenerateMesh()
 							}
 						}
 					}
-
-					if (face == BlockVertices::BlockFace::RIGHT) {
+					else if (face == BlockVertices::BlockFace::RIGHT) {
 						if (x < CHUNK_SIZE_X - 1) {
 							BlockType block_right = blocks[x + 1][y][z].type;
 							render_face = ShouldRenderFace(block, block_right);
@@ -228,8 +227,7 @@ void Chunk::GenerateMesh()
 							}
 						}
 					}
-
-					if (face == BlockVertices::BlockFace::FRONT) {
+					else if (face == BlockVertices::BlockFace::FRONT) {
 						// Logic for the front faces of blocks within a chunk
 						if (z < CHUNK_SIZE_Z - 1) {
 							BlockType block_front = blocks[x][y][z + 1].type;
@@ -243,8 +241,7 @@ void Chunk::GenerateMesh()
 							}
 						}
 					}
-
-					if (face == BlockVertices::BlockFace::BACK) {
+					else if (face == BlockVertices::BlockFace::BACK) {
 						if (z > 0) {
 							BlockType block_back = blocks[x][y][z - 1].type;
 							render_face = ShouldRenderFace(block, block_back);
@@ -256,16 +253,15 @@ void Chunk::GenerateMesh()
 							}
 						}
 					}
-
-					if (face == BlockVertices::BlockFace::BOTTOM) {
+					else if (face == BlockVertices::BlockFace::BOTTOM) {
 						// Note: Never render bottom face of bottom of chunk, it's never visible
 						if (y > 0) {
 							BlockType block_bottom = blocks[x][y - 1][z].type;
 							render_face = ShouldRenderFace(block, block_bottom);
 						}
 					}
-
-					if (face == BlockVertices::BlockFace::TOP) {
+					//else if (face == BlockVertices::BlockFace::TOP) {
+					else {
 						if (y < CHUNK_SIZE_Y - 1) {
 							BlockType block_top = blocks[x][y + 1][z].type;
 							render_face = ShouldRenderFace(block, block_top);
