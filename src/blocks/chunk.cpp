@@ -38,38 +38,19 @@ Chunk::~Chunk() {
 	adjacent_chunks.clear();
 };
 
-void Chunk::ChunkTest()
+double Chunk::GetRawHeight(double cont)
 {
-
-}
-
-BlockType Chunk::GetBlockType(int x, int y, int z)
-{
-	float sea_level_start = 0.5f;
-	float sea_level_end = 0.55f;
-	int sea_height = CHUNK_SIZE_Y / 3.5;
-	float mountains = 0.7f;
-
-	BlockType block = BlockType::AIR;
-
-	//int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
-	//auto terrain_height = 100 + noise_value * 20;
-	float terrain_height = 0;
 	float slope = 0;
 	float y_intercept = 0;
 
 	float spline_1 = 0.3;
 	float spline_2 = 0.6;
 
-	int wx = id.x * CHUNK_SIZE_X;
-	int wz = id.y * CHUNK_SIZE_Z;
-	double noise_value = map_generator->SampleNoise(wx + x, wz + z);
-
-	if (noise_value < spline_1) {
+	if (cont < spline_1) {
 		slope = (100 - 50) / (spline_1 - -1);
 		y_intercept = 50 - (slope * -1);
 	}
-	else if (noise_value >= spline_1 && noise_value < spline_2) {
+	else if (cont >= spline_1 && cont < spline_2) {
 		slope = (150 - 100) / (spline_2 - spline_1);
 		y_intercept = 100 - (slope * spline_1);
 	}
@@ -78,45 +59,68 @@ BlockType Chunk::GetBlockType(int x, int y, int z)
 		y_intercept = 150;
 	}
 
-	terrain_height = slope * noise_value + y_intercept;
+	return slope * cont + y_intercept;
+}
+
+BlockType Chunk::GetBlockType(int x, int y, int z)
+{
+	float sea_level_start = 0.5f;
+	float sea_level_end = 0.55f;
+	float mountains = 0.9f;
+
+	int sea_height = CHUNK_SIZE_Y * 0.3;
+	int mountain_height = CHUNK_SIZE_Y * 0.5;
+
+	int base_soil_depth = 3;
+
+	BlockType block = BlockType::AIR;
+
+	int terrain_height = 0;
+
+
+	int wx = id.x * CHUNK_SIZE_X;
+	int wz = id.y * CHUNK_SIZE_Z;
+	NoiseData noise_data = map_generator->SampleNoise(wx + x, wz + z);
+
+	double cont = noise_data.continentalness;
+	double patch = noise_data.patches;
+
+	double h = GetRawHeight(cont);
+	double hL = GetRawHeight(map_generator->SampleNoise(wx + x - 1, wz + z).continentalness);
+	double hR = GetRawHeight(map_generator->SampleNoise(wx + x + 1, wz + z).continentalness);
+	double hF = GetRawHeight(map_generator->SampleNoise(wx + x, wz + z + 1).continentalness);
+	double hB = GetRawHeight(map_generator->SampleNoise(wx + x - 1, wz + z - 1).continentalness);
+
+	double slope = std::max(std::abs(hL - hR), std::abs(hF - hB));
+
+	terrain_height = std::floor(h);
 
 	if (y < terrain_height) {
-		block = BlockType::GRASS_BLOCK;
+		if (y < sea_height)
+			block = BlockType::DIRT;
+		else
+			block = BlockType::GRASS_BLOCK;
+
+		int soil_depth = std::floor(patch * 3) + base_soil_depth;
+		if (slope > 3.5) {
+			soil_depth = std::max(0, soil_depth - 2);
+		}
+		//print(std::format("{0}", soil_depth));
+
+		if (y > sea_height - 3 && y < sea_height + 3) {
+			if (y > terrain_height - soil_depth)
+				block = BlockType::SAND;
+		}
+		else {
+			if (y < terrain_height - soil_depth)
+				block = BlockType::STONE;
+		}
 	}
 	else if (y == sea_height) {
 		block = BlockType::WATER;
 		if (!has_transparent_blocks)
 			has_transparent_blocks = true;
 	}
-
-	// Above ground
-	//if (noise_value >= sea_level_start) {
-	//	int area_height = sea_height + (sea_height * (noise_value - sea_level_start));
-
-	//	if (noise_value < mountains) {
-	//		if (noise_value <= sea_level_end) {
-	//			if (y <= area_height) {
-	//				block = BlockType::SAND;
-	//			}
-	//		}
-	//		else {
-	//			if (y <= area_height) {
-	//				block = BlockType::GRASS_BLOCK;
-	//			}
-	//		}
-	//	}
-	//	else {
-	//		if (y <= area_height) {
-	//			block = BlockType::STONE;
-	//		}
-	//	}
-	//}
-	//// Underground
-	//else {
-	//	if (y < sea_height) {
-	//		block = BlockType::STONE;
-	//	}
-	//}
 
 	return block;
 }

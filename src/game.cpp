@@ -114,7 +114,7 @@ void Game::ProcessInput(float dt)
 {
 	if (State == DEBUG) {
 		if (keyboard_keys[GLFW_KEY_G] && !keyboard_keys_processed[GLFW_KEY_G]) {
-			map_generator->Reseed(random_int(1, 123459));
+			//map_generator->Reseed(random_int(1, 123459));
 			LoadLevel(0, 0);
 
 			keyboard_keys_processed[GLFW_KEY_G] = true;

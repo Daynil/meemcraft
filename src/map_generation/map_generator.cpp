@@ -41,16 +41,24 @@ void MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_
 	w_offset_z = offset_z;
 
 	std::vector<std::vector<double>> noise_data(size_x, std::vector<double>(size_z));
+	std::vector<std::vector<double>> noise_patches_data(size_x, std::vector<double>(size_z));
 
 	// 0.1 - 64
-	double frequency = 0.01;
+	// Continentalness
+	double frequency_cont = 0.01;
 	// 1 - 16
-	int octaves = 4;
+	int octaves_cont = 4;
+
+	double frequency_patches = 0.1;
+	int octaves_patches = 4;
 
 	for (int x = 0; x < size_x; ++x) {
 		for (int z = 0; z < size_z; ++z) {
 			noise_data[x][z] = perlin.octave2D_11(
-				(x + offset_x) * frequency, (z + offset_z) * frequency, octaves
+				(x + offset_x) * frequency_cont, (z + offset_z) * frequency_cont, octaves_cont
+			);
+			noise_patches_data[x][z] = perlin.octave2D_11(
+				(x + offset_x) * frequency_patches, (z + offset_z) * frequency_patches, octaves_patches
 			);
 		}
 	}
@@ -95,7 +103,8 @@ void MapGenerator::GenerateMap(int size_x, int size_z, int offset_x, int offset_
 	//	}
 	//}
 
-	noisemap_data = noise_data;
+	noisemap_cont_data = noise_data;
+	noisemap_patches_data = noise_patches_data;
 }
 
 void MapGenerator::FollowCamera(glm::vec3 camera_pos)
@@ -111,14 +120,21 @@ void MapGenerator::Reseed(unsigned int seed)
 // The concept of offsets is that our noise_data vector always starts at 0,0.
 // If we track the world offset, we can sample from the 0,0 indexed array more easily
 // using world coordinates by just subtracting the world offset.
-double MapGenerator::SampleNoise(int wx, int wz) const
+NoiseData MapGenerator::SampleNoise(int wx, int wz) const
 {
-	return noisemap_data[wx - w_offset_x][wz - w_offset_z];
+	int ox = wx - w_offset_x;
+	int oz = wz - w_offset_z;
+
+	NoiseData data{};
+	data.continentalness = noisemap_cont_data[ox][oz];
+	data.patches = noisemap_patches_data[ox][oz];
+
+	return data;
 }
 
 void MapGenerator::CreateNoisemapTexture()
 {
-	auto map_dim_size = noisemap_data[0].size();
+	auto map_dim_size = noisemap_cont_data[0].size();
 
 	// RGB = 3 channels
 	// We use unsigned char because each char is 8 bits, aka 1 byte
@@ -133,7 +149,7 @@ void MapGenerator::CreateNoisemapTexture()
 			// RGB = 3 channels
 			int texture_index = (z * map_dim_size + x) * 3;
 			// Compress -1 to 1 -> 0 to 1
-			const double noise_value = (noisemap_data[x][z] + 1) / 2;
+			const double noise_value = (noisemap_cont_data[x][z] + 1) / 2;
 
 			// Noise is 0 - 1, convert to rgb up to 255
 			unsigned char noise_c = static_cast<unsigned char>(noise_value * 255);

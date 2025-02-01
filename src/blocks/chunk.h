@@ -38,7 +38,7 @@ public:
 
 	~Chunk();
 
-	void ChunkTest();
+	double GetRawHeight(double cont);
 
 	BlockType GetBlockType(int x, int y, int z);
 

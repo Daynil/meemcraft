@@ -9,6 +9,10 @@
 #include "rendering/texture.h"
 #include "rendering/shader.h"
 
+struct NoiseData {
+	double continentalness;
+	double patches;
+};
 
 class MapGenerator
 {
@@ -22,7 +26,9 @@ public:
 	// Rendered noisemap's current offset vs. world coords
 	int w_offset_x = 0;
 	int w_offset_z = 0;
-	std::vector<std::vector<double>> noisemap_data;
+
+	// Continentalness
+	std::vector<std::vector<double>> noisemap_cont_data;
 	Entity noisemap;
 
 	siv::PerlinNoise perlin;
@@ -30,6 +36,8 @@ public:
 	double frequency = 0.01;
 	// 1 - 16
 	int octaves = 4;
+
+	std::vector<std::vector<double>> noisemap_patches_data;
 
 	MapGenerator() = default;
 	MapGenerator(RenderingManager* rendering_manager, unsigned int seed);
@@ -40,7 +48,7 @@ public:
 	void FollowCamera(glm::vec3 camera_pos);
 
 	void Reseed(unsigned int seed);
-	double SampleNoise(int x, int z) const;
+	NoiseData SampleNoise(int x, int z) const;
 
 	void CreateNoisemapTexture();
 	void DrawNoisemap(glm::vec3 camera_pos);
